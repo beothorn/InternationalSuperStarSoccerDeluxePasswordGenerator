@@ -376,7 +376,7 @@ function fixIssDeluxePassword(arr) {
 let genPass = genPassForConfig(fixIssDeluxePasswordSimple([0x8b, 0xde, 
 0x8b, 
 0x9b, 
-0x10, // Game 8?
+0b11111111, // Cleared games ?
 0x0b, 
 0x8a, 
 0x8b, 
