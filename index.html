@@ -51,8 +51,8 @@
     </style>
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
     <div>
-        <label for="password">Password:</label>
-        <textarea id="password" rows="4" cols="50"></textarea>
+        <label for="password">Password: (size <span id="passSize">0</span>)</label>
+        <textarea id="password" rows="4" cols="50" oninput="updatePassSize()"></textarea>
     </div>
     <div>
         <label for="decodedPassword">Decoded Password:</label>
@@ -62,6 +62,16 @@
     <div>
         <button onclick="convertToDecoded()">Convert Password to Decoded</button>
         <button onclick="convertToPassword()">Convert Decoded to Password</button>
+        <div>
+            
+            <label><input type="checkbox" id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) when set password size must be 50, unset is 27</label>
+            <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004)</label>
+            <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
+            <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
+            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$100)</label>
+
+            <label><input type="checkbox" id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
+        </div>
         <p>This is a work in progress. The first value must always be 0x8b because of some bit checks I am still investigating. The
             second value is a checksum, so it is always overwritten. You can test all other values.</p> 
     </div>
@@ -342,7 +352,9 @@
                 }else{
                     passAsString += chars[passwordValues[i]];
                 }
-                if(i % 5 == 4) passAsString += " ";
+                if (i % 5 === 4) passAsString += " ";
+                if (i % 20 === 19) passAsString += "\n";
+                
             }
             return passAsString;
         }
@@ -350,16 +362,17 @@
         function fixIssDeluxePasswordSimple(arr) {
             // 1) Force the first byte to 0x8B (satisfies the typical bit checks). Why?
             arr[0] = 0x8B;
-            
-            // 2) Compute the partial sum over bytes [2..19] (18 bytes) in 8-bit arithmetic.
+            return fixChecksum(arr);
+        }
+
+        function fixChecksum(arr) {
             let partialSum = 0;
-            for (let i = 2; i <= 19; i++) {
+            for (let i = 2; i < arr.length; i++) {
                 partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFF;
             }
             
             // 3) Fix arr[1] so that (arr[0] + partialSum) == arr[1] in 8-bit.
             arr[1] = (arr[0] + partialSum) & 0xFF;
-            
             return arr;
         }
 
@@ -369,20 +382,17 @@
             const passwordArray = passwordStringTo8bitArray(password);
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
             
-            if(decoded[0] !== 0x8B){
-                return false;
-            }
-
             let partialSum = 0;
-            for (let i = 2; i <= 19; i++) {
+            for (let i = 2; i < decoded.length; i++) {
                 partialSum = (partialSum + (decoded[i] & 0xFF)) & 0xFF;
             }
             
-            if((decoded[0] + partialSum) & 0xFF != decoded[1]){
-                return false;
+            if(((decoded[0] + partialSum) & 0xFF) !== decoded[1]){
+                return {valid: false, reason: "Checksum does not match, expected "+ 
+                toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
             }
 
-            return true;
+            return {valid: true};
         }
 
         // UI -----
@@ -403,6 +413,7 @@
             // set password or message on error
             try {
                 document.getElementById("password").value = passwordValues(genPassForDecodedPassword(decodedPasswordArray));
+                updatePassSize();
             } catch (e) {
                 document.getElementById("password").value = e.message;
             }
@@ -410,14 +421,42 @@
 
         function convertToDecoded() {
             let decodedResult = "";
-            if(!isValidPassword(document.getElementById("password").value)){
-                decodedResult = "Invalid password -> ";
+
+            const isValid = isValidPassword(document.getElementById("password").value);
+            if(!isValid.valid){
+                decodedResult = "Invalid password\n"+ isValid.reason +"\n";
             }
             const password = document.getElementById("password").value;
             const passwordArray = passwordStringTo8bitArray(password);
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
             decodedResult += "[" + decoded.map(toHex).join(", ") + "]"; 
             document.getElementById("decodedPassword").value = decodedResult;
+            
+        }
+
+        // First and second bytes are XORed and are basically a lot of flags
+        function toggleBit(bitMask, bitShouldBeSet) {
+            const decodedPasswordElement = document.getElementById("decodedPassword");
+            const decodedPasswordArray = convertHexStringToArray(decodedPasswordElement.value);
+            
+            const bitIsSet = (decodedPasswordArray[2] ^ 0x8b) & bitMask;
+            if((bitIsSet && !bitShouldBeSet) || (!bitIsSet && bitShouldBeSet)){
+                // Flip bit at decodedPasswordArray[2]
+                console.log("Flipping bit " + bitMask.toString(2));
+                console.log(decodedPasswordArray[2].toString(2));
+                decodedPasswordArray[2] ^= bitMask;
+                console.log(decodedPasswordArray[2].toString(2));
+            }
+            
+            fixChecksum(decodedPasswordArray);
+
+            decodedPasswordElement.value = "[" + decodedPasswordArray.map(toHex).join(", ") + "]";
+        }
+
+        function updatePassSize() {
+            const password = document.getElementById("password").value;
+            const passwordArray = passwordStringTo8bitArray(password);
+            document.getElementById("passSize").innerText = passwordArray.length;
         }
     </script>
 </body>
