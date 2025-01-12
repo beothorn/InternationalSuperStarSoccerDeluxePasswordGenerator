@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>International Superstar Soccer Deluxe Password Generator</title>
+</head>
+
+<body>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        div {
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <h1>International Superstar Soccer Deluxe Password Generator</h1>
+    <div>
+        <label for="password">Password:</label>
+        <textarea id="password" rows="4" cols="50"></textarea>
+    </div>
+    <div>
+        <label for="decodedPassword">Decoded Password:</label>
+        <textarea id="decodedPassword" rows="4"
+            cols="50">[0x8b, 0xde, 0x8b, 0x9b, 0x8a, 0x0b, 0x8a, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8a, 0x8b, 0x00]</textarea>
+    </div>
+    <div>
+        <button onclick="convertToDecoded()">Convert Password to Decoded</button>
+        <button onclick="convertToPassword()">Convert Decoded to Password</button>
+    </div>
+    <script>
+
+        const chars = "BCDFGHJKLMNPQRSTVWXYZbdfghjnqrt012345678-+  =%<>~$:\"?!  *#      ";
+        const biggestPossibleChar = chars.length - 1;
+        const specialChars = {
+            "division": 42,
+            42: "(division)",
+            "pi": 43,
+            43: "(pi)",
+            "arrowDown": 54,
+            54: "(arrowDown)",
+            "arrowUp": 55,
+            55: "(arrowUp)",
+            "note": 58,
+            58: "(note)",
+            "star": 59,
+            59: "(star)",
+            "spades": 60,
+            60: "(spades)",
+            "diamonds": 61,
+            61: "(diamonds)",
+            "clubs": 62,
+            62: "(clubs)",
+            "hearts": 63,
+            63: "(hearts)",
+        };
+
+        // Takes a password string and converts it to a decoded array
+        // can include spaces, they will be ignored
+        function passwordStringTo8bitArray(passwordString) {
+            // Remove spaces and split by special character markers
+            const parts = passwordString.replace(/\s+/g, '').split(/[()]/);
+            let decodedPassword = [];
+
+            for (const part of parts) {
+                if (specialChars[part] !== undefined) {
+                    // If part is a special character, get its value from specialChars
+                    decodedPassword.push(specialChars[part]);
+                } else {
+                    // Otherwise, map each character to its index in chars
+                    for (const char of part) {
+                        const index = chars.indexOf(char);
+                        if (index !== -1) {
+                            decodedPassword.push(index);
+                        }
+                    }
+                }
+            }
+            // Add the final value of 255
+            decodedPassword.push(255);
+            return decodedPassword;
+        }
+
+        function toHex(value) {
+            return "0x" + ('0' + value.toString(16)).slice(-2);
+        }
+
+
+        function printMemory(memory) {
+            let memoryAsString = "";
+            for (let i = 0; i < memory.length; i++) {
+                if (memory[i]) {
+                    memoryAsString += ('0' + memory[i].toString(16)).slice(-2) + " ";
+                }
+            }
+            console.log("Current memory " + memoryAsString);
+        }
+
+
+        function printMemoryBinary(memory) {
+            let memoryAsString = "";
+            for (let i = 0; i < memory.length; i++) {
+                if (memory[i]) {
+                    memoryAsString += ('0' + memory[i].toString(2)).slice(-8) + " ";
+                }
+            }
+            console.log("Current memory " + memoryAsString);
+        }
+
+        function printBinaryLE(value) {
+            // Ensure the value is represented as a 16-bit binary number
+            let binary = value.toString(2).padStart(16, '0');
+
+            // Split the binary into two 8-bit parts for little-endian representation
+            let lowByte = binary.slice(8, 16); // Lower 8 bits
+            let highByte = binary.slice(0, 8); // Higher 8 bits
+
+            // Combine in little-endian order
+            binary = lowByte + " " + highByte + " - " + toHex(value & 0xFF) + " " + toHex((value >> 8) & 0xFF);
+
+            return binary;
+        }
+
+        function printBinary(value) {
+            // Ensure the value is represented as a 16-bit binary number
+            let binary = value.toString(2).padStart(16, '0');
+
+            // Split the binary into two 8-bit parts for little-endian representation
+            let lowByte = binary.slice(8, 16); // Lower 8 bits
+            let highByte = binary.slice(0, 8); // Higher 8 bits
+
+            binary = highByte + " " + lowByte + " - " + toHex((value >> 8) & 0xFF) + " " + toHex(value & 0xFF);
+
+            return binary;
+        }
+
+        function ror(value, carry) {
+            const newCarry = value & 0x01; // Extract rightmost bit as the new carry
+            const newValue = ((value >> 1) | (carry << 15)) & 0xFFFF; // Shift right and insert carry into the leftmost bit
+            return {
+                newValue,
+                newCarry
+            };
+        }
+
+        function rol(value, carry) {
+            const newCarry = (value >> 15) & 0x01; // Extract leftmost bit as the new carry
+            const newValue = ((value << 1) | carry) & 0xFFFF; // Shift left and insert carry into the rightmost bit 
+            return {
+                newValue,
+                newCarry
+            };
+        }
+
+        function readFromResultInMemory(memory, index) {
+            if (!memory[index]) memory[index] = 0;
+            if (!memory[index + 1]) memory[index + 1] = 0;
+            // each address is 8 bit, but we have the 16 bit on on this logic
+            return (memory[index] & 0xFF) | (memory[index + 1] << 8);
+        }
+
+        // Writes an 16 bit value on two 8 bit memory addresses, little endian
+        function writeOnResultInMemory(memory, index, value) {
+            if (!memory[index]) memory[index] = 0;
+            if (!memory[index + 1]) memory[index + 1] = 0;
+            const valH = (value >> 8) & 0xFF;
+            const valL = value & 0xFF;
+
+            memory[index] = valL;
+            memory[index + 1] = valH;
+        }
+
+        // Given the password value array, returns the decoded password
+        // a value array is the value from the characters, so for example
+        // "BCD" is [1,2,3]
+        // this function will return the decoded password, which will be used by ISSD to setup the game
+        function getDecodedPasswordForPasswordValuesArray(passwordValues) {
+            /*
+            The loop increases multipleOfSixCounter by six on each pass
+            From this we get the quotient and the remainder from a division by 8
+            the quotient is the possition on the decoded password that will be changed
+            and the remainder is the number of times we will rotate the bits
+            since the position is a 8 bit value, and the value we are working with is 16 bit
+            if the rotation results in a result that occupies more than 8 bits
+            the next position will also be affected.
+            This way there is a overlap and if a value is repeating, it is not that apparent
+            The quotient also repeats due to the division, so it can also be that two values are 
+            written to the same position (using bitwise OR)
+            */
+            let multipleOfSixCounter = 0;
+            let passwordIndex = 0;
+            let carry = 0;
+            let result = [];
+            do {
+                const quotient = Math.floor(multipleOfSixCounter / 8); // it goes like 0 0 1 2 3 3 4 ...
+                const remainder = multipleOfSixCounter % 8; // it goes like 0 6 4 2 0 6 4 2 repeating
+                // so, for character 0 on password we shift the value 0 and apply to position 0
+                // for character 1 we shift the value 1 right and 6 and apply to position 0
+                // for character 3 we shift the value 1 right and 4 and apply to position 1
+                // for character 4 we shift the value 1 right and 2 and apply to position 2
+                let a = quotient; // A is the acumulator registry
+                let y = remainder; // Y is another regiistry, used as index for memory accesses (X is anotehr one)
+                let currentChar = passwordValues[passwordIndex];
+
+                if (currentChar > biggestPossibleChar) { // string end marker is 0xff
+                    break;
+                }
+                ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right, dont know why
+                a = newValue;
+                carry = newCarry; // we need the carry to rotate, on the SNES cpu this is the flag C
+                while (y >= 0) { // rotate left the number of times we got from the division remainder
+                    ({ newValue, newCarry } = rol(a, carry));
+                    a = newValue;
+                    carry = newCarry;
+                    y--;
+                }
+                a = a | readFromResultInMemory(result, quotient); // if there is already somethingn on the position, the result is the OR
+                writeOnResultInMemory(result, quotient, a); // maybe A has values on the high part so we write it in a way the next position gets the high value 
+                passwordIndex++; // next char from password
+                multipleOfSixCounter += 6; // next 6 multiplier
+            } while (multipleOfSixCounter < 360); // from the ISSD code, we know the password is 60 characters long
+            return result;
+        }
+
+
+        function notEquals(a, b) {
+            if (a.length != b.length) {
+                return true;
+            }
+            for (let index = 0; index < a.length; index++) {
+                if (a[index] !== b[index]) return true;
+            }
+            return false;
+        }
+
+        // Given a decodedPassword, returns a password string
+        // This is a brute-force algorithm to find the password that returns the given decoded password
+        // Luckly we can check each 8 bit entry to check if it is valid, so we brute-force it for each 16 bit entry
+        // so it is not too expensive
+        function genPassForDecodedPassword(decodedPassword) {
+            let currentPassword = [0]; // initial guess
+            let currentDecodedPasswordFromGuessedPassword = getDecodedPasswordForPasswordValuesArray(currentPassword.concat(0xff));
+
+            let count = 0;
+            while (notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword)) { // if the guess is not good, we keep iterating
+                if (currentPassword.length > 71 || count++ > 30000 ) { // just a safeguard, max pass size (60) plus spaces plus 1
+                    console.log("Could not find password");
+                    console.log(currentPassword);
+                    let memory = "";
+                    for (let i = 0; i < currentDecodedPasswordFromGuessedPassword.length; i++) {
+                        memory += toHex(currentDecodedPasswordFromGuessedPassword[i]) + " ";
+                    }
+                    console.log(memory);
+                    memory = "";
+                    for (let i = 0; i < currentPassword.length; i++) {
+                        memory += currentPassword[i] + " ";
+                    }
+                    console.log(memory);
+                    // throw error
+                    throw new Error("Could not find password");
+                }
+                let currentPasswordCharIndex = currentPassword.length - 1;
+                let previousIndex = Math.floor(((currentPasswordCharIndex - 1) * 6) / 8);
+                let currentIndex = Math.floor((currentPasswordCharIndex * 6) / 8);
+                let nextIndex = Math.floor(((currentPasswordCharIndex + 1) * 6) / 8);
+
+                if (currentDecodedPasswordFromGuessedPassword[currentIndex] === decodedPassword[currentIndex]) {
+                    if (currentDecodedPasswordFromGuessedPassword.length == decodedPassword.length) {
+                        break;
+                    }
+                    currentPassword = currentPassword.concat(0);
+                } else {
+                    let lastChar = currentPassword.pop();
+                    let nextChar = lastChar + 1;
+                    if (nextChar > biggestPossibleChar) {
+                        // We need to know if next number may be able to fix value
+                        // If yes, we go back to zero and continue
+                        if (currentIndex === nextIndex) {
+                            currentPassword = currentPassword.concat(0);
+                            currentPassword = currentPassword.concat(0);
+                        } else {
+                            if (previousIndex === currentIndex) {
+                                currentPassword[currentPassword.length - 1] = currentPassword[currentPassword.length - 1] + 1;
+                                currentPassword = currentPassword.concat(0);
+                            } else {
+                                // lets hope the previous one will fix it
+                                currentPassword[currentPassword.length - 1] = currentPassword[currentPassword.length - 1] + 1;
+                            }
+                        }
+                    } else {
+                        currentPassword = currentPassword.concat(nextChar);
+                    }
+                }
+
+                currentDecodedPasswordFromGuessedPassword = getDecodedPasswordForPasswordValuesArray(currentPassword.concat(0xff));
+            }
+            return currentPassword;
+        }
+
+        function passwordValues(passwordValues){
+            let passAsString = "";
+            for (let i = 0; i < passwordValues.length; i++) {
+                if( chars[passwordValues[i]] === " "){
+                    passAsString += specialChars[passwordValues[i]];
+                }else{
+                    passAsString += chars[passwordValues[i]];
+                }
+                if(i % 5 == 4) passAsString += " ";
+            }
+            return passAsString;
+        }
+
+        // UI -----
+        function convertHexStringToArray(hexString) {
+            // Remove the brackets and split the string by commas
+            const hexArray = hexString.replace(/[\[\]]/g, '').split(', ');
+
+            // Convert each hex value to a decimal number
+            const decimalArray = hexArray.map(hex => parseInt(hex, 16));
+
+            return decimalArray;
+        }
+
+        // Gets the decoded password and return a readable, usable ISSD password
+        function convertToPassword() {
+            const decodedPassword = document.getElementById("decodedPassword").value;
+            const decodedPasswordArray = convertHexStringToArray(decodedPassword);
+            // set password or message on error
+            try {
+                document.getElementById("password").value = passwordValues(genPassForDecodedPassword(decodedPasswordArray));
+            } catch (e) {
+                document.getElementById("password").value = e.message;
+            }
+        }
+    </script>
+</body>
+
+</html>
