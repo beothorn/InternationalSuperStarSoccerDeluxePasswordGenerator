@@ -62,6 +62,8 @@
     <div>
         <button onclick="convertToDecoded()">Convert Password to Decoded</button>
         <button onclick="convertToPassword()">Convert Decoded to Password</button>
+        <p>This is a work in progress. The first value must always be 0x8b because of some bit checks I am still investigating. The
+            second value is a checksum, so it is always overwritten. You can test all other values.</p> 
     </div>
     <script>
 
@@ -240,7 +242,7 @@
                 if (currentChar > biggestPossibleChar) { // string end marker is 0xff
                     break;
                 }
-                ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right, dont know why
+                ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right, don't know why
                 a = newValue;
                 carry = newCarry; // we need the carry to rotate, on the SNES cpu this is the flag C
                 while (y >= 0) { // rotate left the number of times we got from the division remainder
@@ -345,6 +347,22 @@
             return passAsString;
         }
 
+        function fixIssDeluxePasswordSimple(arr) {
+            // 1) Force the first byte to 0x8B (satisfies the typical bit checks). Why?
+            arr[0] = 0x8B;
+            
+            // 2) Compute the partial sum over bytes [2..19] (18 bytes) in 8-bit arithmetic.
+            let partialSum = 0;
+            for (let i = 2; i <= 19; i++) {
+                partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFF;
+            }
+            
+            // 3) Fix arr[1] so that (arr[0] + partialSum) == arr[1] in 8-bit.
+            arr[1] = (arr[0] + partialSum) & 0xFF;
+            
+            return arr;
+        }
+
         // UI -----
         function convertHexStringToArray(hexString) {
             // Remove the brackets and split the string by commas
@@ -359,7 +377,7 @@
         // Gets the decoded password and return a readable, usable ISSD password
         function convertToPassword() {
             const decodedPassword = document.getElementById("decodedPassword").value;
-            const decodedPasswordArray = convertHexStringToArray(decodedPassword);
+            const decodedPasswordArray = fixIssDeluxePasswordSimple(convertHexStringToArray(decodedPassword));
             // set password or message on error
             try {
                 document.getElementById("password").value = passwordValues(genPassForDecodedPassword(decodedPasswordArray));
