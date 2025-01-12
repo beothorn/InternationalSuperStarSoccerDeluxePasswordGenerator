@@ -68,12 +68,24 @@
             <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004)</label>
             <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
             <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
-            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$100)</label>
-
+            <label><input type="checkbox" id="bit9" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$0100)</label>
+            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$1000)</label>
             <label><input type="checkbox" id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
         </div>
         <p>This is a work in progress. The first value must always be 0x8b because of some bit checks I am still investigating. The
             second value is a checksum, so it is always overwritten. You can test all other values.</p> 
+            <ul>
+                <li>You can type <strong>(division)</strong> to use the symbol ÷</li>
+                <li>You can type <strong>(pi)</strong> to use the symbol π</li>
+                <li>You can type <strong>(arrowDown)</strong> to use the symbol ↓</li>
+                <li>You can type <strong>(arrowUp)</strong> to use the symbol ↑</li>
+                <li>You can type <strong>(note)</strong> to use the symbol ♪</li>
+                <li>You can type <strong>(star)</strong> to use the symbol ★</li>
+                <li>You can type <strong>(spades)</strong> to use the symbol ♠</li>
+                <li>You can type <strong>(diamonds)</strong> to use the symbol ♦</li>
+                <li>You can type <strong>(clubs)</strong> to use the symbol ♣</li>
+                <li>You can type <strong>(hearts)</strong> to use the symbol ♥</li>
+            </ul>
     </div>
     <script>
 
@@ -81,25 +93,35 @@
         const biggestPossibleChar = chars.length - 1;
         const specialChars = {
             "division": 42,
-            42: "(division)",
+            "÷": 42,
+            42: "÷",
             "pi": 43,
-            43: "(pi)",
+            "π": 43,
+            43: "π",
             "arrowDown": 54,
-            54: "(arrowDown)",
+            "↓": 54,
+            54: "↓",
             "arrowUp": 55,
-            55: "(arrowUp)",
+            "↑": 55,
+            55: "↑",
             "note": 58,
-            58: "(note)",
+            "♪": 58,
+            58: "♪",
             "star": 59,
-            59: "(star)",
+            "★": 59,
+            59: "★",
             "spades": 60,
-            60: "(spades)",
+            "♠": 60,
+            60: "♠",
             "diamonds": 61,
-            61: "(diamonds)",
+            "♦": 61,
+            61: "♦",
             "clubs": 62,
-            62: "(clubs)",
+            "♣": 62,
+            62: "♣",
             "hearts": 63,
-            63: "(hearts)",
+            "♥": 63,
+            63: "♥",
         };
 
         // Takes a password string and converts it to a decoded array
@@ -117,7 +139,9 @@
                     // Otherwise, map each character to its index in chars
                     for (const char of part) {
                         const index = chars.indexOf(char);
-                        if (index !== -1) {
+                        if (index === -1) {
+                            decodedPassword.push(specialChars[char]);
+                        } else {
                             decodedPassword.push(index);
                         }
                     }
@@ -361,7 +385,7 @@
 
         function fixIssDeluxePasswordSimple(arr) {
             // 1) Force the first byte to 0x8B (satisfies the typical bit checks). Why?
-            arr[0] = 0x8B;
+            //arr[0] = 0x8B;
             return fixChecksum(arr);
         }
 
