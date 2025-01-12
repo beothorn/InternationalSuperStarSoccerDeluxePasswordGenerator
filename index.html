@@ -409,15 +409,15 @@
         }
 
         function convertToDecoded() {
+            let decodedResult = "";
             if(!isValidPassword(document.getElementById("password").value)){
-                document.getElementById("decodedPassword").value = "Invalid password";
-                return;
+                decodedResult = "Invalid password -> ";
             }
             const password = document.getElementById("password").value;
             const passwordArray = passwordStringTo8bitArray(password);
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
-
-            document.getElementById("decodedPassword").value = "[" + decoded.map(toHex).join(", ") + "]";
+            decodedResult += "[" + decoded.map(toHex).join(", ") + "]"; 
+            document.getElementById("decodedPassword").value = decodedResult;
         }
     </script>
 </body>
