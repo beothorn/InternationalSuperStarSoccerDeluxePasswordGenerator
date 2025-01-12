@@ -363,6 +363,28 @@
             return arr;
         }
 
+        // Validates the first bit and the checksum
+        function isValidPassword(password){
+            
+            const passwordArray = passwordStringTo8bitArray(password);
+            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
+            
+            if(decoded[0] !== 0x8B){
+                return false;
+            }
+
+            let partialSum = 0;
+            for (let i = 2; i <= 19; i++) {
+                partialSum = (partialSum + (decoded[i] & 0xFF)) & 0xFF;
+            }
+            
+            if((decoded[0] + partialSum) & 0xFF != decoded[1]){
+                return false;
+            }
+
+            return true;
+        }
+
         // UI -----
         function convertHexStringToArray(hexString) {
             // Remove the brackets and split the string by commas
@@ -384,6 +406,18 @@
             } catch (e) {
                 document.getElementById("password").value = e.message;
             }
+        }
+
+        function convertToDecoded() {
+            if(!isValidPassword(document.getElementById("password").value)){
+                document.getElementById("decodedPassword").value = "Invalid password";
+                return;
+            }
+            const password = document.getElementById("password").value;
+            const passwordArray = passwordStringTo8bitArray(password);
+            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
+
+            document.getElementById("decodedPassword").value = "[" + decoded.map(toHex).join(", ") + "]";
         }
     </script>
 </body>
