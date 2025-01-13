@@ -70,22 +70,22 @@
             <button onclick="convertToPassword()">Convert Decoded to Password</button>
             <p id="passwordIssues"></p>
             <p>
-                <h2>Main flags (in order):</h2>
+                <h2>Main flags (in order, if one matches no other does):</h2>
                 <label><input type="checkbox" checked id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) (world series?)</label>
                 <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004) (International?)</label>
-                <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
-                <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
-                <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000)</label>
+                <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002) (Short league?)</label>
+                <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400) (Short tournament?)</label>
+                <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000)(Scenario?)</label>
             </p>
 
             <p>
-                <h2>Flags for bit 5 (in order):</h2>
+                <h2>Flags for bit 5 (in order, if one matches no other does):</h2>
                 <label><input type="checkbox" checked id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
                 <label><input type="checkbox" id="bit9" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$0100)</label>
             </p>
 
             <p>
-                <h2>Flags for bit 3 (in order):</h2>
+                <h2>Flags for bit 3 (in order, if one matches no other does):</h2>
                 <label><input type="checkbox" checked id="bit4" onchange="toggleBit(0x0008, this.checked)"> Set bit 4 (#$0008)(International Tournament?)</label>
                 <label><input type="checkbox" id="bit10" onchange="toggleBit(0x200, this.checked)"> Set bit 10 (#$0200)</label>
             </p>
