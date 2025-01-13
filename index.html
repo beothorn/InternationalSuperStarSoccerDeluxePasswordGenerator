@@ -52,24 +52,24 @@
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
     <div>
         <label for="password">Password: (size <span id="passSize">0</span>)</label>
-        <textarea id="password" rows="4" cols="50" oninput="updatePassSize()"></textarea>
+        <textarea id="password" rows="4" cols="50" oninput="updateSizeLabels()"></textarea>
     </div>
     <div>
-        <label for="decodedPassword">Decoded Password:</label>
+        <label for="decodedPassword">Decoded Password: (size <span id="decodeSize">0</span>)</label>
         <textarea id="decodedPassword" rows="4"
-            cols="50">[0x8b, 0xde, 0x8b, 0x9b, 0x8a, 0x0b, 0x8a, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8a, 0x8b, 0x00]</textarea>
+            cols="50" oninput="updateSizeLabels()">[0x8b, 0xde, 0x8b, 0x9b, 0x8a, 0x0b, 0x8a, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8a, 0x8b, 0x00]</textarea>
     </div>
     <div>
         <button onclick="convertToDecoded()">Convert Password to Decoded</button>
         <button onclick="convertToPassword()">Convert Decoded to Password</button>
         <div>
             
-            <label><input type="checkbox" id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) when set password size must be 50, unset is 27</label>
+            <label><input type="checkbox" id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) password size must be 50, unset is 27</label>
             <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004)</label>
             <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
             <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
             <label><input type="checkbox" id="bit9" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$0100)</label>
-            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$1000)</label>
+            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000) (Password size 27)</label>
             <label><input type="checkbox" id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
         </div>
         <p>This is a work in progress. The first value must always be 0x8b because of some bit checks I am still investigating. The
@@ -336,7 +336,7 @@
                 let nextIndex = Math.floor(((currentPasswordCharIndex + 1) * 6) / 8);
 
                 if (currentDecodedPasswordFromGuessedPassword[currentIndex] === decodedPassword[currentIndex]) {
-                    if (currentDecodedPasswordFromGuessedPassword.length == decodedPassword.length) {
+                    if (!notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword)) {
                         break;
                     }
                     currentPassword = currentPassword.concat(0);
@@ -437,7 +437,7 @@
             // set password or message on error
             try {
                 document.getElementById("password").value = passwordValues(genPassForDecodedPassword(decodedPasswordArray));
-                updatePassSize();
+                updateSizeLabels();
             } catch (e) {
                 document.getElementById("password").value = e.message;
             }
@@ -455,32 +455,52 @@
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
             decodedResult += "[" + decoded.map(toHex).join(", ") + "]"; 
             document.getElementById("decodedPassword").value = decodedResult;
-            
+            updateSizeLabels();
         }
 
         // First and second bytes are XORed and are basically a lot of flags
+        // position 2 is low and pos 3 is high
         function toggleBit(bitMask, bitShouldBeSet) {
             const decodedPasswordElement = document.getElementById("decodedPassword");
             const decodedPasswordArray = convertHexStringToArray(decodedPasswordElement.value);
+            const lowMask = bitMask & 0xFF;
+            const highMask = (bitMask >> 8) & 0xFF;
             
-            const bitIsSet = (decodedPasswordArray[2] ^ 0x8b) & bitMask;
-            if((bitIsSet && !bitShouldBeSet) || (!bitIsSet && bitShouldBeSet)){
-                // Flip bit at decodedPasswordArray[2]
-                console.log("Flipping bit " + bitMask.toString(2));
-                console.log(decodedPasswordArray[2].toString(2));
-                decodedPasswordArray[2] ^= bitMask;
-                console.log(decodedPasswordArray[2].toString(2));
+            
+            if(lowMask){
+                const bitIsSet = (decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask;
+                if((bitIsSet && !bitShouldBeSet) || (!bitIsSet && bitShouldBeSet)){
+                    // Flip bit at decodedPasswordArray[2]
+                    console.log("Flipping bit pos 2 " + lowMask.toString(2));
+                    console.log(decodedPasswordArray[2].toString(2));
+                    decodedPasswordArray[2] ^= lowMask;
+                    console.log(decodedPasswordArray[2].toString(2));
+                }
             }
+            if(highMask){
+                const bitIsSet = (decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask;
+                if((bitIsSet && !bitShouldBeSet) || (!bitIsSet && bitShouldBeSet)){
+                    // Flip bit at decodedPasswordArray[3]
+                    console.log("Flipping bit pos 3 " + highMask.toString(2));
+                    console.log(decodedPasswordArray[3].toString(2));
+                    decodedPasswordArray[3] ^= highMask;
+                    console.log(decodedPasswordArray[3].toString(2));
+                }
+            }
+            
             
             fixChecksum(decodedPasswordArray);
 
             decodedPasswordElement.value = "[" + decodedPasswordArray.map(toHex).join(", ") + "]";
         }
 
-        function updatePassSize() {
+        function updateSizeLabels() {
             const password = document.getElementById("password").value;
             const passwordArray = passwordStringTo8bitArray(password);
-            document.getElementById("passSize").innerText = passwordArray.length;
+            document.getElementById("passSize").innerText = (passwordArray.length - 1); // password has a terminator character, so we subtract 1
+            const decodedPassword = document.getElementById("decodedPassword").value;
+            const decodedPasswordArray = convertHexStringToArray(decodedPassword);
+            document.getElementById("decodeSize").innerText = decodedPasswordArray.length;
         }
     </script>
 </body>
