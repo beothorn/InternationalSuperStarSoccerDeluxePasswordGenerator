@@ -48,32 +48,49 @@
             margin: 5px;
             cursor: pointer;
         }
+
+        #passwordIssues {
+            color: red;
+            font-weight: bold;
+        }
     </style>
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
     <div>
         <label for="password">Password: (size <span id="passSize">0</span>)</label>
-        <textarea id="password" rows="4" cols="50" oninput="updateSizeLabels()"></textarea>
+        <textarea id="password" rows="4" cols="50" oninput="convertToDecoded()">BBN-B BBBBB B</textarea>
     </div>
     <div>
         <label for="decodedPassword">Decoded Password: (size <span id="decodeSize">0</span>)</label>
         <textarea id="decodedPassword" rows="4"
-            cols="50" oninput="updateSizeLabels()">[0x8b, 0xde, 0x8b, 0x9b, 0x8a, 0x0b, 0x8a, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8b, 0x8a, 0x8b, 0x00]</textarea>
+            cols="50" oninput="updateSizeLabels()">[0x00, 0xa0, 0xa0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]</textarea>
     </div>
     <div>
-        <button onclick="convertToDecoded()">Convert Password to Decoded</button>
-        <button onclick="convertToPassword()">Convert Decoded to Password</button>
         <div>
-            
-            <label><input type="checkbox" id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) password size must be 50, unset is 27</label>
-            <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004)</label>
-            <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
-            <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
-            <label><input type="checkbox" id="bit9" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$0100)</label>
-            <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000) (Password size 27)</label>
-            <label><input type="checkbox" id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
+            <button onclick="convertToDecoded()">Convert Password to Decoded and check validity</button>
+            <button onclick="convertToPassword()">Convert Decoded to Password</button>
+            <p id="passwordIssues"></p>
+            <p>
+                <h2>Main flags (in order):</h2>
+                <label><input type="checkbox" checked id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) (world series?)</label>
+                <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004) (International?)</label>
+                <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002)</label>
+                <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400)</label>
+                <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000)</label>
+            </p>
+
+            <p>
+                <h2>Flags for bit 5 (in order):</h2>
+                <label><input type="checkbox" checked id="bit8" onchange="toggleBit(0x80, this.checked)"> Set bit 8 (#$0080)</label>
+                <label><input type="checkbox" id="bit9" onchange="toggleBit(0x100, this.checked)"> Set bit 9 (#$0100)</label>
+            </p>
+
+            <p>
+                <h2>Flags for bit 3 (in order):</h2>
+                <label><input type="checkbox" checked id="bit4" onchange="toggleBit(0x0008, this.checked)"> Set bit 4 (#$0008)(International Tournament?)</label>
+                <label><input type="checkbox" id="bit10" onchange="toggleBit(0x200, this.checked)"> Set bit 10 (#$0200)</label>
+            </p>
         </div>
-        <p>This is a work in progress. The first value must always be 0x8b because of some bit checks I am still investigating. The
-            second value is a checksum, so it is always overwritten. You can test all other values.</p> 
+        <p>This is a work in progress. You probably will want to play around the decoded values and then convert them to a password.</p> 
             <ul>
                 <li>You can type <strong>(division)</strong> to use the symbol ÷</li>
                 <li>You can type <strong>(pi)</strong> to use the symbol π</li>
@@ -416,6 +433,22 @@
                 toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
             }
 
+            if(isBitSet(decoded, 0x0020)) {
+                if(!isBitSet(decoded, 0x0080) && !isBitSet(decoded, 0x0100)){
+                    if (passwordArray.length - 1 != 50){
+                        return {valid: false, reason: "With only flag 5 set, password size must be 50"};
+                    }
+                } else if(isBitSet(decoded, 0x0080)) {
+                    if (passwordArray.length - 1 != 11){
+                        return {valid: false, reason: "With flag 5 and 8 set, password size must be 11"};
+                    }
+                } else  if(isBitSet(decoded, 0x0100)) {
+                    if (passwordArray.length - 1 != 8){
+                        return {valid: false, reason: "With flag 5 and 9 set, password size must be 8"};
+                    }
+                }
+            }
+
             return {valid: true};
         }
 
@@ -430,8 +463,13 @@
             return decimalArray;
         }
 
+        function setPasswordIssue(issue) {
+            document.getElementById("passwordIssues").innerText = issue;
+        }
+
         // Gets the decoded password and return a readable, usable ISSD password
         function convertToPassword() {
+            setPasswordIssue("");
             const decodedPassword = document.getElementById("decodedPassword").value;
             const decodedPasswordArray = fixIssDeluxePasswordSimple(convertHexStringToArray(decodedPassword));
             // set password or message on error
@@ -441,21 +479,42 @@
             } catch (e) {
                 document.getElementById("password").value = e.message;
             }
+
+
+            updateFlagCheckboxes();
+            const isValid = isValidPassword(document.getElementById("password").value);
+            if(!isValid.valid){
+                setPasswordIssue(isValid.reason);
+            }
         }
 
         function convertToDecoded() {
-            let decodedResult = "";
+            setPasswordIssue("");
 
             const isValid = isValidPassword(document.getElementById("password").value);
             if(!isValid.valid){
-                decodedResult = "Invalid password\n"+ isValid.reason +"\n";
+                setPasswordIssue(isValid.reason);
             }
             const password = document.getElementById("password").value;
             const passwordArray = passwordStringTo8bitArray(password);
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
-            decodedResult += "[" + decoded.map(toHex).join(", ") + "]"; 
+            let decodedResult = "[" + decoded.map(toHex).join(", ") + "]"; 
             document.getElementById("decodedPassword").value = decodedResult;
             updateSizeLabels();
+            updateFlagCheckboxes();
+        }
+
+        function isBitSet(decodedPasswordArray, bitMask) {
+            const lowMask = bitMask & 0xFF;
+            const highMask = (bitMask >> 8) & 0xFF;
+            const bitIsSet = (decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask;
+            if(
+                ((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask)
+                || ((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask)
+            ) {
+                return true;
+            }
+            return false;
         }
 
         // First and second bytes are XORed and are basically a lot of flags
@@ -501,6 +560,18 @@
             const decodedPassword = document.getElementById("decodedPassword").value;
             const decodedPasswordArray = convertHexStringToArray(decodedPassword);
             document.getElementById("decodeSize").innerText = decodedPasswordArray.length;
+        }
+
+        function updateFlagCheckboxes() {
+            const decodedPassword = document.getElementById("decodedPassword").value;
+            const decodedPasswordArray = convertHexStringToArray(decodedPassword);
+            document.getElementById("bit5").checked = isBitSet(decodedPasswordArray, 0x20);
+            document.getElementById("bit3").checked = isBitSet(decodedPasswordArray, 0x04);
+            document.getElementById("bit2").checked = isBitSet(decodedPasswordArray, 0x02);
+            document.getElementById("bit11").checked = isBitSet(decodedPasswordArray, 0x0400);
+            document.getElementById("bit9").checked = isBitSet(decodedPasswordArray, 0x0100);
+            document.getElementById("bit13").checked = isBitSet(decodedPasswordArray, 0x1000);
+            document.getElementById("bit8").checked = isBitSet(decodedPasswordArray, 0x0080);
         }
     </script>
 </body>
