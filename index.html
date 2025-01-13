@@ -449,6 +449,24 @@
                 }
             }
 
+            if(isBitSet(decoded, 0x0004)) {
+                if(!isBitSet(decoded, 0x0008) && !isBitSet(decoded, 0x0200)){
+                    if (passwordArray.length - 1 != 15){
+                        return {valid: false, reason: "With only flag 3 set, password size must be 15"};
+                    }
+                } else if(isBitSet(decoded, 0x0008)) {
+                    if (passwordArray.length - 1 != 39){
+                        return {valid: false, reason: "With flag 3 and 4 set, password size must be 39"};
+                    }
+                } else  if(isBitSet(decoded, 0x0200)) {
+                    if (passwordArray.length - 1 != 12){
+                        return {valid: false, reason: "With flag 3 and 10 set, password size must be 12"};
+                    }
+                }
+            }
+
+
+
             return {valid: true};
         }
 
