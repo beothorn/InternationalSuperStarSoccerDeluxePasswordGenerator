@@ -401,8 +401,6 @@
         }
 
         function fixIssDeluxePasswordSimple(arr) {
-            // 1) Force the first byte to 0x8B (satisfies the typical bit checks). Why?
-            //arr[0] = 0x8B;
             return fixChecksum(arr);
         }
 
@@ -465,6 +463,23 @@
                 }
             }
 
+            if(isBitSet(decoded, 0x0002)) {
+                if (passwordArray.length - 1 != 20){
+                    return {valid: false, reason: "With flag 2, password size must be 20"};
+                }
+            }
+
+            if(isBitSet(decoded, 0x0400)) {
+                if (passwordArray.length - 1 != 24){
+                    return {valid: false, reason: "With flag 11, password size must be 24"};
+                }
+            }
+
+            if(isBitSet(decoded, 0x1000)) {
+                if (passwordArray.length - 1 != 27){
+                    return {valid: false, reason: "With flag 9, password size must be 27"};
+                }
+            }
 
 
             return {valid: true};
