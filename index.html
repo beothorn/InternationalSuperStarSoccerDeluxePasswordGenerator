@@ -330,7 +330,7 @@
             let currentDecodedPasswordFromGuessedPassword = getDecodedPasswordForPasswordValuesArray(currentPassword.concat(0xff));
 
             let count = 0;
-            while (notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword)) { // if the guess is not good, we keep iterating
+            while (notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword) || !(isValidPasswordValues(currentPassword.concat(0xff)).valid)) { // if the guess is not good, we keep iterating
                 if (currentPassword.length > 71 || count++ > 30000 ) { // just a safeguard, max pass size (60) plus spaces plus 1
                     console.log("Could not find password");
                     console.log(currentPassword);
@@ -345,7 +345,7 @@
                     }
                     console.log(memory);
                     // throw error
-                    throw new Error("Could not find password");
+                    throw new Error("Could not find password: "+isValidPasswordValues(currentPassword).reason);
                 }
                 let currentPasswordCharIndex = currentPassword.length - 1;
                 let previousIndex = Math.floor(((currentPasswordCharIndex - 1) * 6) / 8);
@@ -353,7 +353,7 @@
                 let nextIndex = Math.floor(((currentPasswordCharIndex + 1) * 6) / 8);
 
                 if (currentDecodedPasswordFromGuessedPassword[currentIndex] === decodedPassword[currentIndex]) {
-                    if (!notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword)) {
+                    if (!notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword) && isValidPasswordValues(currentPassword).valid) {
                         break;
                     }
                     currentPassword = currentPassword.concat(0);
@@ -404,7 +404,7 @@
             return fixChecksum(arr);
         }
 
-        function fixChecksum(arr) {
+        function fixChecksumOLD(arr) {
             let partialSum = 0;
             for (let i = 2; i < arr.length; i++) {
                 partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFF;
@@ -415,10 +415,17 @@
             return arr;
         }
 
-        // Validates the first bit and the checksum
-        function isValidPassword(password){
-            
-            const passwordArray = passwordStringTo8bitArray(password);
+        function fixChecksum(arr) {
+            let partialSum = 0;
+            for (let i = 2; i < arr.length; i++) {
+                partialSum = (partialSum + (arr[i] & 0xFFFF)) & 0xFFFF;
+            }
+            // TODO: need to set high and low bit
+            arr[1] = (arr[0] + partialSum) & 0xFF;
+            return arr;
+        }
+
+        function isValidPasswordValues(passwordArray) {
             const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
             
             let partialSum = 0;
@@ -429,6 +436,15 @@
             if(((decoded[0] + partialSum) & 0xFF) !== decoded[1]){
                 return {valid: false, reason: "Checksum does not match, expected "+ 
                 toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
+            }
+
+            if(!isBitSet(decoded, 0x0020) 
+                && !isBitSet(decoded, 0x0004) 
+                && !isBitSet(decoded, 0x0002) 
+                && !isBitSet(decoded, 0x0400)
+                && !isBitSet(decoded, 0x1000)
+            ) {
+                return {valid: false, reason: "At least one of the main flags must be set."};
             }
 
             if(isBitSet(decoded, 0x0020)) {
@@ -483,6 +499,12 @@
 
 
             return {valid: true};
+        }
+
+        // Validates the first bit and the checksum
+        function isValidPassword(password){   
+            const passwordArray = passwordStringTo8bitArray(password);
+            return isValidPasswordValues(passwordArray);
         }
 
         // UI -----
