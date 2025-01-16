@@ -57,12 +57,12 @@
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
     <div>
         <label for="password">Password: (size <span id="passSize">0</span>)</label>
-        <textarea id="password" rows="4" cols="50" oninput="convertToDecoded()">BBN-B BBBBB B</textarea>
+        <textarea id="password" rows="4" cols="50" oninput="convertToDecoded()">S*2nT 513</textarea>
     </div>
     <div>
         <label for="decodedPassword">Decoded Password: (size <span id="decodeSize">0</span>)</label>
         <textarea id="decodedPassword" rows="4"
-            cols="50" oninput="updateSizeLabels()">[0x00, 0xa0, 0xa0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]</textarea>
+            cols="50" oninput="updateSizeLabels()"></textarea>
     </div>
     <div>
         <div>
@@ -418,11 +418,43 @@
         function fixChecksum(arr) {
             let partialSum = 0;
             for (let i = 2; i < arr.length; i++) {
-                partialSum = (partialSum + (arr[i] & 0xFFFF)) & 0xFFFF;
+                partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFFFF;
             }
             // TODO: need to set high and low bit
             arr[1] = (arr[0] + partialSum) & 0xFF;
             return arr;
+        }
+
+        function badChecksum(decoded, countDownStart) {
+            let A = countDownStart;
+            A--;
+            A--;
+            let var4 = A;
+            let var2 = 0;
+            let X = 2;
+
+            do {
+                A = decoded[X];
+                A += var2;
+                A &= 0xFF;
+                var2 = A;
+                A = decoded[X];
+                A = A ^ decoded[0];
+                decoded[X] = A;
+                X++;
+                var4--;
+            } while(var4 != 0);
+
+            A = var2;
+            A &= 0xFF;
+            A += decoded[0];
+            A &= 0xFF;
+            if(A !== decoded[1]) {
+                console.log("Failed checksum");
+            } else {
+                
+                console.log("Good checksum");
+            }
         }
 
         function isValidPasswordValues(passwordArray) {
@@ -433,19 +465,10 @@
                 partialSum = (partialSum + (decoded[i] & 0xFF)) & 0xFF;
             }
             
-            if(((decoded[0] + partialSum) & 0xFF) !== decoded[1]){
-                return {valid: false, reason: "Checksum does not match, expected "+ 
-                toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
-            }
-
-            if(!isBitSet(decoded, 0x0020) 
-                && !isBitSet(decoded, 0x0004) 
-                && !isBitSet(decoded, 0x0002) 
-                && !isBitSet(decoded, 0x0400)
-                && !isBitSet(decoded, 0x1000)
-            ) {
-                return {valid: false, reason: "At least one of the main flags must be set."};
-            }
+            // if(((decoded[0] + partialSum) & 0xFF) !== decoded[1]){
+            //     return {valid: false, reason: "Checksum does not match, expected "+ 
+            //     toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
+            // }
 
             if(isBitSet(decoded, 0x0020)) {
                 if(!isBitSet(decoded, 0x0080) && !isBitSet(decoded, 0x0100)){
@@ -459,11 +482,13 @@
                 } else  if(isBitSet(decoded, 0x0100)) {
                     if (passwordArray.length - 1 != 8){
                         return {valid: false, reason: "With flag 5 and 9 set, password size must be 8"};
+                    } else {
+                        if (badChecksum(decoded, 0x06)) { // 0x06 comes from the game constants
+                            return {valid: false, reason: "Bad checksum"};
+                        }
                     }
                 }
-            }
-
-            if(isBitSet(decoded, 0x0004)) {
+            } else if(isBitSet(decoded, 0x0004)) { // Important note, if 0x20 is set, the other main bit is not checked, same for the other values
                 if(!isBitSet(decoded, 0x0008) && !isBitSet(decoded, 0x0200)){
                     if (passwordArray.length - 1 != 15){
                         return {valid: false, reason: "With only flag 3 set, password size must be 15"};
@@ -477,24 +502,20 @@
                         return {valid: false, reason: "With flag 3 and 10 set, password size must be 12"};
                     }
                 }
-            }
-
-            if(isBitSet(decoded, 0x0002)) {
+            } else if(isBitSet(decoded, 0x0002)) {
                 if (passwordArray.length - 1 != 20){
                     return {valid: false, reason: "With flag 2, password size must be 20"};
                 }
-            }
-
-            if(isBitSet(decoded, 0x0400)) {
+            } else if(isBitSet(decoded, 0x0400)) {
                 if (passwordArray.length - 1 != 24){
                     return {valid: false, reason: "With flag 11, password size must be 24"};
                 }
-            }
-
-            if(isBitSet(decoded, 0x1000)) {
+            } else if(isBitSet(decoded, 0x1000)) {
                 if (passwordArray.length - 1 != 27){
                     return {valid: false, reason: "With flag 9, password size must be 27"};
                 }
+            } else {
+                return {valid: false, reason: "At least one of the main flags must be set."};
             }
 
 
@@ -562,13 +583,28 @@
         function isBitSet(decodedPasswordArray, bitMask) {
             const lowMask = bitMask & 0xFF;
             const highMask = (bitMask >> 8) & 0xFF;
-            const bitIsSet = (decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask;
+
+            // print 16 bits value in binary
+            console.log("Checking bit mask:\n0x" + bitMask.toString(16));
+            console.log("Checking bit mask:\n" + bitMask.toString(2).padStart(16, '0'));
+            console.log("decodedPasswordArray[2] ^ decodedPasswordArray[0]")
+            console.log(decodedPasswordArray[2].toString(2).padStart(16, '0'));
+            console.log(lowMask.toString(2).padStart(16, '0'));
+            console.log(((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask).toString(2).padStart(16, '0'));
+            console.log("decodedPasswordArray[3] ^ decodedPasswordArray[0]")
+            console.log(decodedPasswordArray[3].toString(2).padStart(16, '0'));
+            console.log(highMask.toString(2).padStart(16, '0'));
+            console.log(((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask));
+
             if(
                 ((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask)
                 || ((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask)
             ) {
+                console.log("bit is set");
                 return true;
             }
+
+            console.log("bit is nor set");
             return false;
         }
 
