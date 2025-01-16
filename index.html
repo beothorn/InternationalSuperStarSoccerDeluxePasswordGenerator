@@ -404,39 +404,60 @@
             return fixChecksum(arr);
         }
 
-        function fixChecksumOLD(arr) {
-            let partialSum = 0;
-            for (let i = 2; i < arr.length; i++) {
-                partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFF;
+        function getCountDownStartForDecoded(decoded) {
+            if(isBitSet(decoded, 0x0020)) {
+                if(!isBitSet(decoded, 0x0080) && !isBitSet(decoded, 0x0100)){
+                    return 0x25;
+                } else if(isBitSet(decoded, 0x0080)) {
+                    return 0x08;
+                } else  if(isBitSet(decoded, 0x0100)) {
+                    return 0x06;
+                }
+            } else if(isBitSet(decoded, 0x0004)) { // Important note, if 0x20 is set, the other main bit is not checked, same for the other values
+                if(!isBitSet(decoded, 0x0008) && !isBitSet(decoded, 0x0200)){
+                    return 0x0b;
+                } else if(isBitSet(decoded, 0x0008)) {
+                    return 0x1d;
+                } else  if(isBitSet(decoded, 0x0200)) {
+                    return 0x09;
+                }
+            } else if(isBitSet(decoded, 0x0002)) {
+                return 0x0f;
+            } else if(isBitSet(decoded, 0x0400)) {
+                return 0x12;
+            } else if(isBitSet(decoded, 0x1000)) {
+                return 0x14;
+            } else {
+                return 0;
             }
-            
-            // 3) Fix arr[1] so that (arr[0] + partialSum) == arr[1] in 8-bit.
-            arr[1] = (arr[0] + partialSum) & 0xFF;
-            return arr;
         }
 
-        function fixChecksum(arr) {
-            let partialSum = 0;
-            for (let i = 2; i < arr.length; i++) {
-                partialSum = (partialSum + (arr[i] & 0xFF)) & 0xFFFF;
+        function fixChecksum(decoded) {
+            const countDownStart = getCountDownStartForDecoded(decoded);
+
+            let X = 2;
+            let sum = 0;
+            for(let i = countDownStart - 2; i > 0; i--) {
+                sum += decoded[X];
+                sum &= 0xFF;
+                X++;
             }
-            // TODO: need to set high and low bit
-            arr[1] = (arr[0] + partialSum) & 0xFF;
-            return arr;
+
+            decoded[1] = ((sum + decoded[0]) & 0xFF);
+            return decoded;
         }
 
         function badChecksum(decoded, countDownStart) {
-            let var4 = countDownStart - 2;
-            let var2 = 0;
             let X = 2;
-            do {
-                var2 += decoded[X];
-                var2 &= 0xFF;
+            let sum = 0;
+            for(let i = countDownStart - 2; i > 0; i--) {
+                sum += decoded[X];
+                sum &= 0xFF;
                 X++;
-                var4--;
-            } while(var4 != 0);
+            }
 
-            if(decoded[1] != ((var2 + decoded[0]) & 0xFF)) {
+            const checkValue = decoded[1];
+            if(checkValue != ((sum + decoded[0]) & 0xFF)) {
                 console.log("Failed checksum");
                 return true;
             } else {
@@ -446,17 +467,7 @@
         }
 
         function isValidPasswordValues(passwordArray) {
-            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff))
-            
-            let partialSum = 0;
-            for (let i = 2; i < decoded.length; i++) {
-                partialSum = (partialSum + (decoded[i] & 0xFF)) & 0xFF;
-            }
-            
-            // if(((decoded[0] + partialSum) & 0xFF) !== decoded[1]){
-            //     return {valid: false, reason: "Checksum does not match, expected "+ 
-            //     toHex((decoded[0] + partialSum) & 0xFF) + " got " + toHex(decoded[1])};
-            // }
+            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray.concat(0xff));
 
             if(isBitSet(decoded, 0x0020)) {
                 if(!isBitSet(decoded, 0x0080) && !isBitSet(decoded, 0x0100)){
@@ -519,7 +530,6 @@
             } else {
                 return {valid: false, reason: "At least one of the main flags must be set."};
             }
-
 
             return {valid: true};
         }
