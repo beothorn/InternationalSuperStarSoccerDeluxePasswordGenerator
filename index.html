@@ -426,34 +426,22 @@
         }
 
         function badChecksum(decoded, countDownStart) {
-            let A = countDownStart;
-            A--;
-            A--;
-            let var4 = A;
+            let var4 = countDownStart - 2;
             let var2 = 0;
             let X = 2;
-
             do {
-                A = decoded[X];
-                A += var2;
-                A &= 0xFF;
-                var2 = A;
-                A = decoded[X];
-                A = A ^ decoded[0];
-                decoded[X] = A;
+                var2 += decoded[X];
+                var2 &= 0xFF;
                 X++;
                 var4--;
             } while(var4 != 0);
 
-            A = var2;
-            A &= 0xFF;
-            A += decoded[0];
-            A &= 0xFF;
-            if(A !== decoded[1]) {
+            if(decoded[1] != ((var2 + decoded[0]) & 0xFF)) {
                 console.log("Failed checksum");
+                return true;
             } else {
-                
                 console.log("Good checksum");
+                return false;
             }
         }
 
@@ -474,45 +462,59 @@
                 if(!isBitSet(decoded, 0x0080) && !isBitSet(decoded, 0x0100)){
                     if (passwordArray.length - 1 != 50){
                         return {valid: false, reason: "With only flag 5 set, password size must be 50"};
+                    } else  if (badChecksum(decoded, 0x25)) { // 0x25/37 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 } else if(isBitSet(decoded, 0x0080)) {
                     if (passwordArray.length - 1 != 11){
                         return {valid: false, reason: "With flag 5 and 8 set, password size must be 11"};
+                    } else if (badChecksum(decoded, 0x08)) { // 0x08/8 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 } else  if(isBitSet(decoded, 0x0100)) {
                     if (passwordArray.length - 1 != 8){
                         return {valid: false, reason: "With flag 5 and 9 set, password size must be 8"};
-                    } else {
-                        if (badChecksum(decoded, 0x06)) { // 0x06 comes from the game constants
-                            return {valid: false, reason: "Bad checksum"};
-                        }
+                    } else  if (badChecksum(decoded, 0x06)) { // 0x06/6 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 }
             } else if(isBitSet(decoded, 0x0004)) { // Important note, if 0x20 is set, the other main bit is not checked, same for the other values
                 if(!isBitSet(decoded, 0x0008) && !isBitSet(decoded, 0x0200)){
                     if (passwordArray.length - 1 != 15){
                         return {valid: false, reason: "With only flag 3 set, password size must be 15"};
+                    } else  if (badChecksum(decoded, 0x0b)) { // 0x0b/11 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 } else if(isBitSet(decoded, 0x0008)) {
                     if (passwordArray.length - 1 != 39){
                         return {valid: false, reason: "With flag 3 and 4 set, password size must be 39"};
+                    } else  if (badChecksum(decoded, 0x1d)) { // 0x1d/29 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 } else  if(isBitSet(decoded, 0x0200)) {
                     if (passwordArray.length - 1 != 12){
                         return {valid: false, reason: "With flag 3 and 10 set, password size must be 12"};
+                    } else  if (badChecksum(decoded, 0x09)) { // 0x09/09 comes from the game constants
+                        return {valid: false, reason: "Bad checksum"};
                     }
                 }
             } else if(isBitSet(decoded, 0x0002)) {
                 if (passwordArray.length - 1 != 20){
                     return {valid: false, reason: "With flag 2, password size must be 20"};
+                } else  if (badChecksum(decoded, 0x0f)) { // 0x0f/15 comes from the game constants
+                    return {valid: false, reason: "Bad checksum"};
                 }
             } else if(isBitSet(decoded, 0x0400)) {
                 if (passwordArray.length - 1 != 24){
                     return {valid: false, reason: "With flag 11, password size must be 24"};
+                } else  if (badChecksum(decoded, 0x12)) { // 0x12/18 comes from the game constants
+                    return {valid: false, reason: "Bad checksum"};
                 }
             } else if(isBitSet(decoded, 0x1000)) {
                 if (passwordArray.length - 1 != 27){
                     return {valid: false, reason: "With flag 9, password size must be 27"};
+                } else  if (badChecksum(decoded, 0x14)) { // 0x14/20 comes from the game constants
+                    return {valid: false, reason: "Bad checksum"};
                 }
             } else {
                 return {valid: false, reason: "At least one of the main flags must be set."};
