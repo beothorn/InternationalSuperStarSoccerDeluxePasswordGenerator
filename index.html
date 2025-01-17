@@ -597,26 +597,26 @@
             const highMask = (bitMask >> 8) & 0xFF;
 
             // print 16 bits value in binary
-            console.log("Checking bit mask:\n0x" + bitMask.toString(16));
-            console.log("Checking bit mask:\n" + bitMask.toString(2).padStart(16, '0'));
-            console.log("decodedPasswordArray[2] ^ decodedPasswordArray[0]")
-            console.log(decodedPasswordArray[2].toString(2).padStart(16, '0'));
-            console.log(lowMask.toString(2).padStart(16, '0'));
-            console.log(((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask).toString(2).padStart(16, '0'));
-            console.log("decodedPasswordArray[3] ^ decodedPasswordArray[0]")
-            console.log(decodedPasswordArray[3].toString(2).padStart(16, '0'));
-            console.log(highMask.toString(2).padStart(16, '0'));
-            console.log(((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask));
+            // console.log("Checking bit mask:\n0x" + bitMask.toString(16));
+            // console.log("Checking bit mask:\n" + bitMask.toString(2).padStart(16, '0'));
+            // console.log("decodedPasswordArray[2] ^ decodedPasswordArray[0]")
+            // console.log(decodedPasswordArray[2].toString(2).padStart(16, '0'));
+            // console.log(lowMask.toString(2).padStart(16, '0'));
+            // console.log(((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask).toString(2).padStart(16, '0'));
+            // console.log("decodedPasswordArray[3] ^ decodedPasswordArray[0]")
+            // console.log(decodedPasswordArray[3].toString(2).padStart(16, '0'));
+            // console.log(highMask.toString(2).padStart(16, '0'));
+            // console.log(((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask));
 
             if(
                 ((decodedPasswordArray[2] ^ decodedPasswordArray[0]) & lowMask)
                 || ((decodedPasswordArray[3] ^ decodedPasswordArray[0]) & highMask)
             ) {
-                console.log("bit is set");
+                // console.log("bit is set");
                 return true;
             }
 
-            console.log("bit is nor set");
+            // console.log("bit is not set");
             return false;
         }
 
