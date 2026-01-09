@@ -676,6 +676,144 @@
             document.getElementById("bit13").checked = isBitSet(decodedPasswordArray, 0x1000);
             document.getElementById("bit8").checked = isBitSet(decodedPasswordArray, 0x0080);
         }
+
+        function bitPackValues(values) {
+            // result[0]=randomizer, result[1]=checksum placeholder
+            // bytes written start at result[2] (1702).
+            const result = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // will change bytes as needed
+
+            let bitsLeftInCurrentByte = 8; // corresponds to bits remaining.
+            let currentIndex = 2;          // starting at 0x1702
+            let carry = 0;                 // CPU carry flag
+
+            for (const [bitCount, value] of values) {
+                let src = value;
+
+                for (let i = 0; i < bitCount; i++) {
+                    // Carry gets bit at position 0, src shifts right, bit at position 7 fills is now 0
+                    // Just like on the actual game
+                    carry = src & 1;
+                    src = (src >>> 1) & 0xff;
+
+                    let dest = result[currentIndex] & 0xff; // we keep it byte sized
+                    // We move one to the right and write the carry on the 8 bit
+                    // In other words, the bit enters on the left
+                    dest = ((dest >>> 1) | (carry << 7)) & 0xff;
+                    result[currentIndex] = dest;
+                    bitsLeftInCurrentByte--;
+                    if (bitsLeftInCurrentByte === 0) { // no more space, advance one byte
+                        currentIndex++;
+                        bitsLeftInCurrentByte = 8;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        function extractParameters(decoded) {
+            // fixed, known by the format
+            const bitCounts = [8, 8, 4, 7, 3, 6, 6, 6, 2];
+
+            // Step 1: figure out how many bits are used in each payload byte (starting at decoded[2])
+            const bitsUsedInByte = [];
+            let bitsLeftInCurrentByte = 8;
+            let byteNumber = 0; // 0 means decoded[2]
+
+            for (const bitCount of bitCounts) {
+                for (let i = 0; i < bitCount; i++) {
+                    bitsUsedInByte[byteNumber] = (bitsUsedInByte[byteNumber] || 0) + 1;
+
+                    bitsLeftInCurrentByte--;
+                    if (bitsLeftInCurrentByte === 0) {
+                        byteNumber++;
+                        bitsLeftInCurrentByte = 8;
+                    }
+                }
+            }
+
+            // Step 2: traverse the bitstream in the final stored order and rebuild params
+            const params = [];
+
+            let currentIndex = 2; // decoded[2] is first packed byte
+            let bitOffsetInUsedRegion = 0;
+
+            for (const bitCount of bitCounts) {
+                let value = 0;
+
+                for (let i = 0; i < bitCount; i++) {
+                    const used = bitsUsedInByte[currentIndex - 2] || 0;
+                    const startBit = 8 - used; // where the "used region" begins (e.g. 4-bit => start at bit 4)
+
+                    const bitPosition = startBit + bitOffsetInUsedRegion; // left -> right inside used region
+                    const bit = (decoded[currentIndex] >>> bitPosition) & 1;
+
+                    // original encoder consumed value LSB-first, so rebuild LSB-first
+                    value |= (bit << i);
+
+                    bitOffsetInUsedRegion++;
+                    if (bitOffsetInUsedRegion === used) {
+                        currentIndex++;
+                        bitOffsetInUsedRegion = 0;
+                    }
+                }
+
+                params.push(value);
+            }
+
+            return params;
+        }
+
+
+        function decodePasswordToNineParams(passwordString) {
+            const passwordArray = passwordStringTo8bitArray(passwordString); // your function
+            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray); // your function
+            const bitCounts = [8, 8, 4, 7, 3, 6, 6, 6, 2];
+            const params = extractParameters(decoded, bitCounts);
+
+            return { decoded, params };
+        }
+
+        function testEncodeDecode(pass, passResult) {
+            const { decoded, params } = decodePasswordToNineParams(pass);
+            console.log("Decoded from case:", passResult + " password:", pass);
+            console.log(decoded.map(toHex));   
+            console.log("Extracted params:", params);
+        }
+
+        testEncodeDecode("B~DCD GC5K* KB", "Brazil lost");
+        testEncodeDecode("B~NCD GC5K* K1", "Brazil won");
+        testEncodeDecode("B(spades)GCD GC?8K LB", "Argentina lost")
+        testEncodeDecode("B5DCD GCZ*- LB", "Mexico lost");
+        testEncodeDecode("L9JFN 5C7*1 HD", "England lost");
+        testEncodeDecode("BLFCD GCG7d JB", "Japan lost");
+
+        // console.log(genPassForDecodedPassword(bitPackValues([
+        //         [8,  0x04],
+        //         [8,  0x02],
+        //         [4,  0x01],
+        //         [7,  0x01],
+        //         [3,  0x02],
+        //         [6,  24],
+        //         [6,  31],
+        //         [6,  30],
+        //         [2,  0x00]
+        //     ]))
+        // );
+
+        console.log(passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues([
+                [8,  0x04],
+                [8,  0x02],
+                [4,  0x01],
+                [7,  0x01],
+                [3,  0x02],
+                [6,  24],
+                [6,  24],
+                [6,  24],
+                [2,  0x00]
+            ]))))
+        );
+
     </script>
 </body>
 
