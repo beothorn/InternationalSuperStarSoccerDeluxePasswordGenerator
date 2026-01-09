@@ -702,10 +702,10 @@
         function bitPackValues(values) {
             // result[0]=randomizer, result[1]=checksum placeholder
             // bytes written start at result[2] (1702).
-            const result = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]; // will change bytes as needed
+            const result = []; // will change bytes as needed
 
             let bitsLeftInCurrentByte = 8; // corresponds to bits remaining.
-            let currentIndex = 2;          // starting at 0x1702
+            let currentIndex = 0;          // starting at 0x1702
             let carry = 0;                 // CPU carry flag
 
             for (const [bitCount, value] of values) {
@@ -717,10 +717,16 @@
                     carry = src & 1;
                     src = (src >>> 1) & 0xff;
 
+                    // expand result array if needed
+                    while (currentIndex >= result.length) {
+                        result.push(0x00);
+                    }
+
                     let dest = result[currentIndex] & 0xff; // we keep it byte sized
                     // We move one to the right and write the carry on the 8 bit
                     // In other words, the bit enters on the left
                     dest = ((dest >>> 1) | (carry << 7)) & 0xff;
+                    
                     result[currentIndex] = dest;
                     bitsLeftInCurrentByte--;
                     if (bitsLeftInCurrentByte === 0) { // no more space, advance one byte
@@ -730,12 +736,12 @@
                 }
             }
 
-            return result;
+            // concatenate the two bytes for randomizer and checksum and last byte is the terminator
+            const finalResult = fixChecksum([0,0].concat(result).concat([0]));
+            return finalResult; 
         }
 
-        function extractParameters(decoded) {
-            // fixed, known by the format
-            const bitCounts = [8, 8, 4, 7, 3, 6, 6, 6, 2];
+        function extractParameters(decoded, bitCounts) {
 
             // Step 1: figure out how many bits are used in each payload byte (starting at decoded[2])
             const bitsUsedInByte = [];
@@ -786,67 +792,31 @@
             return params;
         }
 
+        const passwordString = "BLFCD GCG7d JB";
+        const passwordArray = passwordStringTo8bitArray(passwordString); // your function
+        const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray); // your function
+        const bitCountsInternationalEliminationRound = [8, 8, 4, 7, 3, 6, 6, 6, 2];
 
-        function decodePasswordToNineParams(passwordString) {
-            const passwordArray = passwordStringTo8bitArray(passwordString); // your function
-            const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray); // your function
-            const bitCounts = [8, 8, 4, 7, 3, 6, 6, 6, 2];
-            const params = extractParameters(decoded, bitCounts);
+        const bitCountsInternationalPreliminaryRound = [8, 8, 4, 7, 3, 3, 6, 6, 6, 6, 6, 2, 2, 2, 2];
+        const params = extractParameters(decoded, bitCountsInternationalEliminationRound);
+        console.log(decoded.map(toHex));   
+        console.log("Extracted params:", params);
+        console.log("Extracted params:", params.map(toHex));
 
-            return { decoded, params };
-        }
-
-        function testEncodeDecode(pass, passResult) {
-            const { decoded, params } = decodePasswordToNineParams(pass);
-            console.log("Decoded from case:", passResult + " password:", pass);
-            console.log(decoded.map(toHex));   
-            console.log("Extracted params:", params);
-        }
-
-        testEncodeDecode("B~DCD GC5K* KB", "Brazil lost");
-        testEncodeDecode("B~NCD GC5K* K1", "Brazil won");
-        testEncodeDecode("B(spades)GCD GC?8K LB", "Argentina lost")
-        testEncodeDecode("B5DCD GCZ*- LB", "Mexico lost");
-        testEncodeDecode("L9JFN 5C7*1 HD", "England lost");
-        testEncodeDecode("BLFCD GCG7d JB", "Japan lost");
-
-        // console.log(genPassForDecodedPassword(bitPackValues([
-        //         [8,  0x04],
-        //         [8,  0x02],
-        //         [4,  0x01],
-        //         [7,  0x01],
-        //         [3,  0x02],
-        //         [6,  24],
-        //         [6,  31],
-        //         [6,  30],
-        //         [2,  0x00]
-        //     ]))
-        // );
-
-        console.log(passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues([
-                [8,  0x04],
-                [8,  0x02],
-                [4,  0x01],
-                [7,  0x01],
-                [3,  0x02],
+        const internationalEliminationPhaseDefaultPass = bitPackValues([
+                [8,  4],
+                [8,  2],
+                [4,  1],
+                [7,  1],
+                [3,  2],
                 [6,  24],
-                [6,  24],
-                [6,  24],
-                [2,  0x00]
-            ]))))
-        );
+                [6,  26],
+                [6,  25],
+                [2,  0]
+            ]);
+        console.log(internationalEliminationPhaseDefaultPass.map(toHex));
 
-        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues([
-                [8,  0x04],
-                [8,  0x02],
-                [4,  0x01],
-                [7,  0x01],
-                [3,  0x02],
-                [6,  24],
-                [6,  24],
-                [6,  24],
-                [2,  0x00]
-            ]))));
+        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(internationalEliminationPhaseDefaultPass));
 
         function generateInternationalEliminationPhasePassword() {
             const passwordArray = [
@@ -861,9 +831,50 @@
                 [2, parseInt(document.getElementById("InternationalEliminationPhaseParam7").value)]
             ];
 
-            const passwordString = passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues(passwordArray))));
+            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
             document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordString;
         }
+
+        //         [
+//   [8,  0x05],
+//   [8,  0x00],
+//   [4,  0x02],
+//   [7,  0x00],
+//   [3,  0x02],
+//   [3,  0x03],
+//   [6,  0x1e],
+//   [6,  0x0e],
+//   [6,  0x0c],
+//   [6,  0x1d],
+//   [6,  0x44],
+//   [2,  0x00],
+//   [2,  0x00],
+//   [2,  0x00],
+//   [2,  0x00]
+// ]
+
+        const preliminaryPasswordArray = [
+            [8,  0x05],
+            [8,  0x00],
+            [4,  0x02],
+            [7,  0x00],
+            [3,  0x02],
+            [3,  0x03],
+            [6,  0x1e],
+            [6,  0x0e],
+            [6,  0x0c],
+            [6,  0x1d],
+            [6,  0x44],
+            [2,  0x00],
+            [2,  0x00],
+            [2,  0x00],
+            [2,  0x00]
+        ];
+
+        console.log("-----------------------");
+        console.log(bitPackValues(preliminaryPasswordArray).map(toHex));
+
+        console.log(passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues(preliminaryPasswordArray)))));
 
     </script>
 </body>
