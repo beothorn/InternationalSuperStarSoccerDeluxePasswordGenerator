@@ -53,8 +53,30 @@
             color: red;
             font-weight: bold;
         }
+
+        #InternationalEliminationPhaseLabels label {
+            display: flex;
+        }
     </style>
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
+
+
+    <div>
+        <p>International cup elimination phase pass gen:</p>
+        <!-- 7 labels for parameter values, example: 1 1 2 24 24 24 0 -->
+        <div id="InternationalEliminationPhaseLabels">
+            <input type="number" id="InternationalEliminationPhaseParam1" value="1" min="0" max="3">
+            <input type="number" id="InternationalEliminationPhaseParam2" value="1" min="0" max="3">
+            <input type="number" id="InternationalEliminationPhaseParam3" value="2" min="0" max="3">
+            <input type="number" id="InternationalEliminationPhaseParam4" value="24" min="0" max="31">
+            <input type="number" id="InternationalEliminationPhaseParam5" value="24" min="0" max="31">
+            <input type="number" id="InternationalEliminationPhaseParam6" value="24" min="0" max="31">
+            <input type="number" id="InternationalEliminationPhaseParam7" value="0" min="0" max="3">
+        </div>
+        <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
+        <p id="InternationalEliminationPhasePassword"></p>
+    </div>
+
     <div>
         <label for="password">Password: (size <span id="passSize">0</span>)</label>
         <textarea id="password" rows="4" cols="50" oninput="convertToDecoded()">S*2nT 513</textarea>
@@ -813,6 +835,35 @@
                 [2,  0x00]
             ]))))
         );
+
+        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues([
+                [8,  0x04],
+                [8,  0x02],
+                [4,  0x01],
+                [7,  0x01],
+                [3,  0x02],
+                [6,  24],
+                [6,  24],
+                [6,  24],
+                [2,  0x00]
+            ]))));
+
+        function generateInternationalEliminationPhasePassword() {
+            const passwordArray = [
+                [8,  0x04],
+                [8,  0x02],
+                [4, parseInt(document.getElementById("InternationalEliminationPhaseParam1").value)],
+                [7, parseInt(document.getElementById("InternationalEliminationPhaseParam2").value)],
+                [3, parseInt(document.getElementById("InternationalEliminationPhaseParam3").value)],
+                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam4").value)],
+                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam5").value)],
+                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam6").value)],
+                [2, parseInt(document.getElementById("InternationalEliminationPhaseParam7").value)]
+            ];
+
+            const passwordString = passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues(passwordArray))));
+            document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordString;
+        }
 
     </script>
 </body>
