@@ -62,19 +62,41 @@
 
 
     <div>
-        <p>International cup elimination phase pass gen:</p>
+        <p>International cup elimination round pass gen:</p>
         <!-- 7 labels for parameter values, example: 1 1 2 24 24 24 0 -->
         <div id="InternationalEliminationPhaseLabels">
             <input type="number" id="InternationalEliminationPhaseParam1" value="1" min="0" max="3">
             <input type="number" id="InternationalEliminationPhaseParam2" value="1" min="0" max="3">
             <input type="number" id="InternationalEliminationPhaseParam3" value="2" min="0" max="3">
-            <input type="number" id="InternationalEliminationPhaseParam4" value="24" min="0" max="31">
-            <input type="number" id="InternationalEliminationPhaseParam5" value="24" min="0" max="31">
-            <input type="number" id="InternationalEliminationPhaseParam6" value="24" min="0" max="31">
-            <input type="number" id="InternationalEliminationPhaseParam7" value="0" min="0" max="3">
+            <select class="teamInput" id="InternationalEliminationPhaseParam4" ></select>
+            <select class="teamInput" id="InternationalEliminationPhaseParam5" ></select>
+            <select class="teamInput" id="InternationalEliminationPhaseParam6" ></select>
+            <select class="victoryInput" id="InternationalEliminationPhaseParam7" ></select>
         </div>
         <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
         <p id="InternationalEliminationPhasePassword"></p>
+    </div>
+
+    <div>
+        <p>International cup preliminary phase pass gen:</p>
+        <!-- 13 labels for parameter values, example: 2 0 2 3 30 14 12 29 68 0 0 0 0 -->
+        <div id="InternationalPreliminaryPhaseLabels">
+            <input type="number" id="InternationalPreliminaryPhaseParam1" value="2" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam2" value="0" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam3" value="2" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam4" value="3" min="0" max="31">
+            <select class="teamInput" id="InternationalPreliminaryPhaseParam5" ></select>
+            <input type="number" id="InternationalPreliminaryPhaseParam6" value="14" min="0" max="31">
+            <input type="number" id="InternationalPreliminaryPhaseParam7" value="12" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam8" value="29" min="0" max="127">
+            <input type="number" id="InternationalPreliminaryPhaseParam9" value="68" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam10" value="0" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam11" value="0" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam12" value="0" min="0" max="3">
+            <input type="number" id="InternationalPreliminaryPhaseParam13" value="0" min="0" max="3">
+        </div>
+        <button onclick="generateInternationalPreliminaryPhasePassword()">Generate Password</button>
+        <p id="InternationalPreliminaryPhasePassword"></p>
     </div>
 
     <div>
@@ -162,6 +184,77 @@
             "♥": 63,
             63: "♥",
         };
+
+        const victoryStates = [
+            { value: 0, label: "Defeat" },
+            { value: 1, label: "Draw" },
+            { value: 2, label: "Win" }
+        ];
+
+        const teams = [
+            { value: 0,  label: "Italy" },
+            { value: 1,  label: "Holland" },
+            { value: 2,  label: "England" },
+            { value: 3,  label: "Norway" },
+            { value: 4,  label: "Spain" },
+            { value: 5,  label: "Ireland" },
+            { value: 6,  label: "Portugal" },
+            { value: 7,  label: "Denmark" },
+            { value: 8,  label: "Germany" },
+            { value: 9,  label: "France" },
+            { value: 10, label: "Belgium" },
+            { value: 11, label: "Sweden" },
+            { value: 12, label: "Romania" },
+            { value: 13, label: "Bulgaria" },
+            { value: 14, label: "Russia" },
+            { value: 15, label: "Swiss" },
+            { value: 16, label: "Greece" },
+            { value: 17, label: "Croatia" },
+            { value: 18, label: "Austria" },
+            { value: 19, label: "Wales" },
+            { value: 20, label: "Scotland" },
+            { value: 21, label: "N. Ireland" },
+            { value: 22, label: "The Czech Rep." },
+            { value: 23, label: "Poland" },
+            { value: 24, label: "Japan" },
+            { value: 25, label: "S. Korea" },
+            { value: 26, label: "Turkey" },
+            { value: 27, label: "Nigeria" },
+            { value: 28, label: "Cameroon" },
+            { value: 29, label: "Morocco" },
+            { value: 30, label: "Brazil" },
+            { value: 31, label: "Argentina" },
+            { value: 32, label: "Columbia" },
+            { value: 33, label: "Mexico" },
+            { value: 34, label: "USA" },
+            { value: 35, label: "Uruguay" },
+            { value: 36, label: "All Star" },
+            { value: 37, label: "Eurostar.a" },
+            { value: 38, label: "Eurostar.b" },
+            { value: 39, label: "Asian star" },
+            { value: 40, label: "AfricanStar" },
+            { value: 41, label: "AllAmericanStar" }
+        ];
+
+        /* Populate all selects with class "teamInput" */
+        document.querySelectorAll(".teamInput").forEach(select => {
+            teams.forEach(team => {
+                const option = document.createElement("option");
+                option.value = team.value;
+                option.textContent = team.label;
+                select.appendChild(option);
+            });
+        });
+
+         /* Populate all selects with class "victoryInput" */
+        document.querySelectorAll(".victoryInput").forEach(select => {
+            victoryStates.forEach(victory => {
+                const option = document.createElement("option");
+                option.value = victory.value;
+                option.textContent = victory.label;
+                select.appendChild(option);
+            });
+        });
 
         // Takes a password string and converts it to a decoded array
         // can include spaces, they will be ignored
@@ -818,6 +911,28 @@
 
         document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(internationalEliminationPhaseDefaultPass));
 
+        const internationalPreliminaryPhaseDefaultPass = [
+            [8,  5],
+            [8,  0],
+            [4,  2],
+            [7,  0],
+            [3,  2],
+            [3,  3],
+            [6,  30],
+            [6,  14],
+            [6,  12],
+            [6,  29],
+            [6,  68],
+            [2,  0],
+            [2,  0],
+            [2,  0],
+            [2,  0]
+        ];
+
+        document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues(internationalPreliminaryPhaseDefaultPass)));
+
+
+
         function generateInternationalEliminationPhasePassword() {
             const passwordArray = [
                 [8,  0x04],
@@ -835,47 +950,30 @@
             document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordString;
         }
 
-        //         [
-//   [8,  0x05],
-//   [8,  0x00],
-//   [4,  0x02],
-//   [7,  0x00],
-//   [3,  0x02],
-//   [3,  0x03],
-//   [6,  0x1e],
-//   [6,  0x0e],
-//   [6,  0x0c],
-//   [6,  0x1d],
-//   [6,  0x44],
-//   [2,  0x00],
-//   [2,  0x00],
-//   [2,  0x00],
-//   [2,  0x00]
-// ]
+        function generateInternationalPreliminaryPhasePassword() {
+            const passwordArray = [
+                [8,  0x05],
+                [8,  0x00],
+                [4, parseInt(document.getElementById("InternationalPreliminaryPhaseParam1").value)],
+                [7, parseInt(document.getElementById("InternationalPreliminaryPhaseParam2").value)],
+                [3, parseInt(document.getElementById("InternationalPreliminaryPhaseParam3").value)],
+                [3, parseInt(document.getElementById("InternationalPreliminaryPhaseParam4").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam5").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam6").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam7").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam8").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam9").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam10").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam11").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam12").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam13").value)]
+            ];
 
-        const preliminaryPasswordArray = [
-            [8,  0x05],
-            [8,  0x00],
-            [4,  0x02],
-            [7,  0x00],
-            [3,  0x02],
-            [3,  0x03],
-            [6,  0x1e],
-            [6,  0x0e],
-            [6,  0x0c],
-            [6,  0x1d],
-            [6,  0x44],
-            [2,  0x00],
-            [2,  0x00],
-            [2,  0x00],
-            [2,  0x00]
-        ];
+            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
+            document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordString;
+        }
 
         console.log("-----------------------");
-        console.log(bitPackValues(preliminaryPasswordArray).map(toHex));
-
-        console.log(passwordValues(genPassForDecodedPassword(fixChecksum(bitPackValues(preliminaryPasswordArray)))));
-
     </script>
 </body>
 
