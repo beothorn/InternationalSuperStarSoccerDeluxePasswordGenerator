@@ -54,8 +54,25 @@
             font-weight: bold;
         }
 
-        #InternationalEliminationPhaseLabels label {
+        /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
+        #InternationalEliminationPhaseLabels label,
+        #InternationalPreliminaryPhaseLabels label {
             display: flex;
+            align-items: center;
+            justify-content: space-between; /* push input to the far right so all inputs line up */
+            gap: 12px; /* small space between label text and input column */
+        }
+
+        /* fixed width for inputs/selects (adjust width if you want more space for long names) */
+        #InternationalEliminationPhaseLabels label input,
+        #InternationalEliminationPhaseLabels label select,
+        #InternationalPreliminaryPhaseLabels label input,
+        #InternationalPreliminaryPhaseLabels label select {
+            width: 220px;         /* fixed size to comfortably fit longest team name + padding */
+            max-width: 100%;     /* won't overflow on very small screens */
+            box-sizing: border-box;
+            text-align: left;    /* keep text inside input/select left-aligned */
+            flex: 0 0 220px;     /* don't grow or shrink, keep fixed column width */
         }
     </style>
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
@@ -63,15 +80,29 @@
 
     <div>
         <p>International cup elimination round pass gen:</p>
-        <!-- 7 labels for parameter values, example: 1 1 2 24 24 24 0 -->
+        <!-- 7 input with label for parameter values, example: 1 1 2 24 24 24 0 -->
         <div id="InternationalEliminationPhaseLabels">
-            <input type="number" id="InternationalEliminationPhaseParam1" value="1" min="0" max="3">
-            <input type="number" id="InternationalEliminationPhaseParam2" value="1" min="0" max="3">
-            <input type="number" id="InternationalEliminationPhaseParam3" value="2" min="0" max="3">
-            <select class="teamInput" id="InternationalEliminationPhaseParam4" ></select>
-            <select class="teamInput" id="InternationalEliminationPhaseParam5" ></select>
-            <select class="teamInput" id="InternationalEliminationPhaseParam6" ></select>
-            <select class="victoryInput" id="InternationalEliminationPhaseParam7" ></select>
+            <label for="InternationalEliminationPhaseParam1">Param 1:
+                <input type="number" id="InternationalEliminationPhaseParam1" value="1" min="0" max="15">
+            </label>
+            <label for="InternationalEliminationPhaseParam2">Param 2:
+                <input type="number" id="InternationalEliminationPhaseParam2" value="1" min="0" max="127">
+            </label>
+            <label for="InternationalEliminationPhaseParam3">Param 3:
+                <input type="number" id="InternationalEliminationPhaseParam3" value="2" min="0" max="7">
+            </label>
+            <label for="InternationalEliminationPhaseParam4">Player team:
+                <select class="teamInput" id="InternationalEliminationPhaseParam4" ></select>
+            </label>
+            <label for="InternationalEliminationPhaseParam5">Second team on group:
+                <select class="teamInput" id="InternationalEliminationPhaseParam5" ></select>
+            </label>
+            <label for="InternationalEliminationPhaseParam6">Third team on group:
+                <select class="teamInput" id="InternationalEliminationPhaseParam6" ></select>
+            </label>
+            <label for="InternationalEliminationPhaseParam7">Last game result:
+                <select class="victoryInput" id="InternationalEliminationPhaseParam7" data-max="3" ></select>
+            </label>
         </div>
         <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
         <p id="InternationalEliminationPhasePassword"></p>
@@ -81,19 +112,45 @@
         <p>International cup preliminary phase pass gen:</p>
         <!-- 13 labels for parameter values, example: 2 0 2 3 30 14 12 29 68 0 0 0 0 -->
         <div id="InternationalPreliminaryPhaseLabels">
-            <input type="number" id="InternationalPreliminaryPhaseParam1" value="2" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam2" value="0" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam3" value="2" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam4" value="3" min="0" max="31">
-            <select class="teamInput" id="InternationalPreliminaryPhaseParam5" ></select>
-            <input type="number" id="InternationalPreliminaryPhaseParam6" value="14" min="0" max="31">
-            <input type="number" id="InternationalPreliminaryPhaseParam7" value="12" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam8" value="29" min="0" max="127">
-            <input type="number" id="InternationalPreliminaryPhaseParam9" value="68" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam10" value="0" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam11" value="0" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam12" value="0" min="0" max="3">
-            <input type="number" id="InternationalPreliminaryPhaseParam13" value="0" min="0" max="3">
+            <label for="InternationalPreliminaryPhaseParam1">Param 1:
+                <input type="number" id="InternationalPreliminaryPhaseParam1" value="2" min="0" max="15">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam2">Param 2:
+                <input type="number" id="InternationalPreliminaryPhaseParam2" value="0" min="0" max="127">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam3">Param 3:
+                <input type="number" id="InternationalPreliminaryPhaseParam3" value="2" min="0" max="7">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam4">Param 4:
+                <input type="number" id="InternationalPreliminaryPhaseParam4" value="3" min="0" max="7">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam5">Player team:
+                <select class="teamInput" id="InternationalPreliminaryPhaseParam5" ></select>
+            </label>
+            <label for="InternationalPreliminaryPhaseParam6">Param 6:
+                <input type="number" id="InternationalPreliminaryPhaseParam6" value="14" min="0" max="63">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam7">Param 7:
+                <input type="number" id="InternationalPreliminaryPhaseParam7" value="12" min="0" max="63">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam8">Param 8:
+                <input type="number" id="InternationalPreliminaryPhaseParam8" value="29" min="0" max="63">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam9">Param 9:
+                <input type="number" id="InternationalPreliminaryPhaseParam9" value="68" min="0" max="63">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam10">Param 10:
+                <input type="number" id="InternationalPreliminaryPhaseParam10" value="0" min="0" max="3">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam11">Param 11:
+                <input type="number" id="InternationalPreliminaryPhaseParam11" value="0" min="0" max="3">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam12">Param 12:
+                <input type="number" id="InternationalPreliminaryPhaseParam12" value="0" min="0" max="3">
+            </label>
+            <label for="InternationalPreliminaryPhaseParam13">Param 13:
+                <input type="number" id="InternationalPreliminaryPhaseParam13" value="0" min="0" max="3">
+            </label>
         </div>
         <button onclick="generateInternationalPreliminaryPhasePassword()">Generate Password</button>
         <p id="InternationalPreliminaryPhasePassword"></p>
@@ -117,7 +174,7 @@
                 <h2>Main flags (in order, if one matches no other does):</h2>
                 <label><input type="checkbox" checked id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) (world series?)</label>
                 <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004) (International?)</label>
-                <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002) (Short league?)</label>
+                <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.c    hecked)"> Set bit 2 (#$0002) (Short league?)</label>
                 <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400) (Short tournament?)</label>
                 <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000)(Scenario?)</label>
             </p>
