@@ -112,6 +112,9 @@
         <p>International cup preliminary phase pass gen:</p>
         <!-- 13 labels for parameter values, example: 2 0 2 3 30 14 12 29 68 0 0 0 0 -->
         <div id="InternationalPreliminaryPhaseLabels">
+            <label for="InternationalPreliminaryPhaseParamGamesLeft">Game (5 - first, 4 - second):
+                <input type="number" id="InternationalPreliminaryPhaseParamGamesLeft" value="5" min="0" max="5">
+            </label>
             <label for="InternationalPreliminaryPhaseParam1">Param 1:
                 <input type="number" id="InternationalPreliminaryPhaseParam1" value="2" min="0" max="15">
             </label>
@@ -124,32 +127,32 @@
             <label for="InternationalPreliminaryPhaseParam4">Param 4:
                 <input type="number" id="InternationalPreliminaryPhaseParam4" value="3" min="0" max="7">
             </label>
-            <label for="InternationalPreliminaryPhaseParam5">Player team:
+            <label for="InternationalPreliminaryPhaseParam5">Player team (except allstar):
                 <select class="teamInput" id="InternationalPreliminaryPhaseParam5" ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam6">Param 6:
-                <input type="number" id="InternationalPreliminaryPhaseParam6" value="14" min="0" max="63">
+            <label for="InternationalPreliminaryPhaseParam6">Team 1:
+                <select class="teamInput" id="InternationalPreliminaryPhaseParam6" ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam7">Param 7:
-                <input type="number" id="InternationalPreliminaryPhaseParam7" value="12" min="0" max="63">
+            <label for="InternationalPreliminaryPhaseParam7">Team 2:
+                <select class="teamInput" id="InternationalPreliminaryPhaseParam7" ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam8">Param 8:
-                <input type="number" id="InternationalPreliminaryPhaseParam8" value="29" min="0" max="63">
+            <label for="InternationalPreliminaryPhaseParam8">Team 3:
+                <select class="teamInput" id="InternationalPreliminaryPhaseParam8" ></select>
             </label>
             <label for="InternationalPreliminaryPhaseParam9">Param 9:
                 <input type="number" id="InternationalPreliminaryPhaseParam9" value="68" min="0" max="63">
             </label>
-            <label for="InternationalPreliminaryPhaseParam10">Param 10:
-                <input type="number" id="InternationalPreliminaryPhaseParam10" value="0" min="0" max="3">
+            <label for="InternationalPreliminaryPhaseParam10">Player last Game result:
+                <select class="victoryInput" id="InternationalPreliminaryPhaseParam10"  ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam11">Param 11:
-                <input type="number" id="InternationalPreliminaryPhaseParam11" value="0" min="0" max="3">
+            <label for="InternationalPreliminaryPhaseParam11">Team 1 last Game result:
+                <select class="victoryInput" id="InternationalPreliminaryPhaseParam11" ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam12">Param 12:
-                <input type="number" id="InternationalPreliminaryPhaseParam12" value="0" min="0" max="3">
+            <label for="InternationalPreliminaryPhaseParam12">Team 2 last Game result:
+                <select class="victoryInput" id="InternationalPreliminaryPhaseParam12" ></select>
             </label>
-            <label for="InternationalPreliminaryPhaseParam13">Param 13:
-                <input type="number" id="InternationalPreliminaryPhaseParam13" value="0" min="0" max="3">
+            <label for="InternationalPreliminaryPhaseParam13">Team 3 last Game result:
+                <select class="victoryInput" id="InternationalPreliminaryPhaseParam13" ></select>
             </label>
         </div>
         <button onclick="generateInternationalPreliminaryPhasePassword()">Generate Password</button>
@@ -942,33 +945,19 @@
             return params;
         }
 
-        const passwordString = "BLFCD GCG7d JB";
-        const passwordArray = passwordStringTo8bitArray(passwordString); // your function
-        const decoded = getDecodedPasswordForPasswordValuesArray(passwordArray); // your function
-        const bitCountsInternationalEliminationRound = [8, 8, 4, 7, 3, 6, 6, 6, 2];
+        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues([
+            [8,  4],
+            [8,  2],
+            [4,  1],
+            [7,  1],
+            [3,  2],
+            [6,  24],
+            [6,  26],
+            [6,  25],
+            [2,  0]
+        ])));
 
-        const bitCountsInternationalPreliminaryRound = [8, 8, 4, 7, 3, 3, 6, 6, 6, 6, 6, 2, 2, 2, 2];
-        const params = extractParameters(decoded, bitCountsInternationalEliminationRound);
-        console.log(decoded.map(toHex));   
-        console.log("Extracted params:", params);
-        console.log("Extracted params:", params.map(toHex));
-
-        const internationalEliminationPhaseDefaultPass = bitPackValues([
-                [8,  4],
-                [8,  2],
-                [4,  1],
-                [7,  1],
-                [3,  2],
-                [6,  24],
-                [6,  26],
-                [6,  25],
-                [2,  0]
-            ]);
-        console.log(internationalEliminationPhaseDefaultPass.map(toHex));
-
-        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(internationalEliminationPhaseDefaultPass));
-
-        const internationalPreliminaryPhaseDefaultPass = [
+        document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues([
             [8,  5],
             [8,  0],
             [4,  2],
@@ -984,11 +973,7 @@
             [2,  0],
             [2,  0],
             [2,  0]
-        ];
-
-        document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues(internationalPreliminaryPhaseDefaultPass)));
-
-
+        ])));
 
         function generateInternationalEliminationPhasePassword() {
             const passwordArray = [
@@ -1009,7 +994,8 @@
 
         function generateInternationalPreliminaryPhasePassword() {
             const passwordArray = [
-                [8,  0x05],
+                // [8,  0x05],
+                [8, parseInt(document.getElementById("InternationalPreliminaryPhaseParamGamesLeft").value)],
                 [8,  0x00],
                 [4, parseInt(document.getElementById("InternationalPreliminaryPhaseParam1").value)],
                 [7, parseInt(document.getElementById("InternationalPreliminaryPhaseParam2").value)],
@@ -1028,6 +1014,29 @@
 
             const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
             document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordString;
+        }
+
+        function generateInternationalPreliminary2PhasePassword() {
+            const passwordArray = [
+                [8,  0x04],
+                [8,  0x00],
+                [4, parseInt(document.getElementById("InternationalPreliminary2PhaseParam1").value)],
+                [7, parseInt(document.getElementById("InternationalPreliminary2PhaseParam2").value)],
+                [3, parseInt(document.getElementById("InternationalPreliminary2PhaseParam3").value)],
+                [3, parseInt(document.getElementById("InternationalPreliminary2PhaseParam4").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam5").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam6").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam7").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam8").value)],
+                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam9").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam10").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam11").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam12").value)],
+                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam13").value)]
+            ];
+
+            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
+            document.getElementById("InternationalPreliminary2PhasePassword").innerHTML = passwordString;
         }
 
         console.log("-----------------------");
