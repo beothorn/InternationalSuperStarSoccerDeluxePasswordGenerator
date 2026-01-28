@@ -55,8 +55,7 @@
         }
 
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
-        #InternationalEliminationPhaseLabels label,
-        #InternationalPreliminaryPhaseLabels label {
+        #passwordParametersForm label {
             display: flex;
             align-items: center;
             justify-content: space-between; /* push input to the far right so all inputs line up */
@@ -64,10 +63,8 @@
         }
 
         /* fixed width for inputs/selects (adjust width if you want more space for long names) */
-        #InternationalEliminationPhaseLabels label input,
-        #InternationalEliminationPhaseLabels label select,
-        #InternationalPreliminaryPhaseLabels label input,
-        #InternationalPreliminaryPhaseLabels label select {
+        #passwordParametersForm label input,
+        #passwordParametersForm label select {
             width: 220px;         /* fixed size to comfortably fit longest team name + padding */
             max-width: 100%;     /* won't overflow on very small screens */
             box-sizing: border-box;
@@ -79,89 +76,9 @@
 
     <select id="passwordTypeSelector"></select>
     <div id="passwordParametersForm"></div>
+    <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
     <div id="generatedPasswordContainer">
         <p id="generatedPassword">BBBB BBBB BBBB BBBB</p>
-    </div>
-
-    <div>
-        <p>International cup elimination round pass gen:</p>
-        <!-- 7 input with label for parameter values, example: 1 1 2 24 24 24 0 -->
-        <div id="InternationalEliminationPhaseLabels">
-            <label for="InternationalEliminationPhaseParam1">Param 1:
-                <input type="number" id="InternationalEliminationPhaseParam1" value="1" min="0" max="15">
-            </label>
-            <label for="InternationalEliminationPhaseParam2">Param 2:
-                <input type="number" id="InternationalEliminationPhaseParam2" value="1" min="0" max="127">
-            </label>
-            <label for="InternationalEliminationPhaseParam3">Param 3:
-                <input type="number" id="InternationalEliminationPhaseParam3" value="2" min="0" max="7">
-            </label>
-            <label for="InternationalEliminationPhaseParam4">Player team:
-                <select class="teamInput" id="InternationalEliminationPhaseParam4" ></select>
-            </label>
-            <label for="InternationalEliminationPhaseParam5">Second team on group:
-                <select class="teamInput" id="InternationalEliminationPhaseParam5" ></select>
-            </label>
-            <label for="InternationalEliminationPhaseParam6">Third team on group:
-                <select class="teamInput" id="InternationalEliminationPhaseParam6" ></select>
-            </label>
-            <label for="InternationalEliminationPhaseParam7">Last game result:
-                <select class="victoryInput" id="InternationalEliminationPhaseParam7" data-max="3" ></select>
-            </label>
-        </div>
-        <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
-        <p id="InternationalEliminationPhasePassword"></p>
-    </div>
-
-    <div>
-        <p>International cup preliminary phase pass gen:</p>
-        <!-- 13 labels for parameter values, example: 2 0 2 3 30 14 12 29 68 0 0 0 0 -->
-        <div id="InternationalPreliminaryPhaseLabels">
-            <label for="InternationalPreliminaryPhaseParamGamesLeft">Game (5 - first, 4 - second):
-                <input type="number" id="InternationalPreliminaryPhaseParamGamesLeft" value="5" min="0" max="5">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam1">Param 1:
-                <input type="number" id="InternationalPreliminaryPhaseParam1" value="2" min="0" max="15">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam2">Param 2:
-                <input type="number" id="InternationalPreliminaryPhaseParam2" value="0" min="0" max="127">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam3">Param 3:
-                <input type="number" id="InternationalPreliminaryPhaseParam3" value="2" min="0" max="7">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam4">Param 4:
-                <input type="number" id="InternationalPreliminaryPhaseParam4" value="3" min="0" max="7">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam5">Player team (except allstar):
-                <select class="teamInput" id="InternationalPreliminaryPhaseParam5" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam6">Team 1:
-                <select class="teamInput" id="InternationalPreliminaryPhaseParam6" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam7">Team 2:
-                <select class="teamInput" id="InternationalPreliminaryPhaseParam7" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam8">Team 3:
-                <select class="teamInput" id="InternationalPreliminaryPhaseParam8" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam9">Param 9:
-                <input type="number" id="InternationalPreliminaryPhaseParam9" value="68" min="0" max="63">
-            </label>
-            <label for="InternationalPreliminaryPhaseParam10">Player last Game result:
-                <select class="victoryInput" id="InternationalPreliminaryPhaseParam10"  ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam11">Team 1 last Game result:
-                <select class="victoryInput" id="InternationalPreliminaryPhaseParam11" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam12">Team 2 last Game result:
-                <select class="victoryInput" id="InternationalPreliminaryPhaseParam12" ></select>
-            </label>
-            <label for="InternationalPreliminaryPhaseParam13">Team 3 last Game result:
-                <select class="victoryInput" id="InternationalPreliminaryPhaseParam13" ></select>
-            </label>
-        </div>
-        <button onclick="generateInternationalPreliminaryPhasePassword()">Generate Password</button>
-        <p id="InternationalPreliminaryPhasePassword"></p>
     </div>
 
     <div>
@@ -301,25 +218,23 @@
             { value: 41, label: "AllAmericanStar" }
         ];
 
-        /* Populate all selects with class "teamInput" */
-        document.querySelectorAll(".teamInput").forEach(select => {
+        function populateTeamSelect(select) {
             teams.forEach(team => {
                 const option = document.createElement("option");
                 option.value = team.value;
                 option.textContent = team.label;
                 select.appendChild(option);
             });
-        });
+        }
 
-         /* Populate all selects with class "victoryInput" */
-        document.querySelectorAll(".victoryInput").forEach(select => {
+        function populateVictorySelect(select) {
             victoryStates.forEach(victory => {
                 const option = document.createElement("option");
                 option.value = victory.value;
                 option.textContent = victory.label;
                 select.appendChild(option);
             });
-        });
+        }
 
         // Takes a password string and converts it to a decoded array
         // can include spaces, they will be ignored
@@ -952,100 +867,6 @@
             return params;
         }
 
-        document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues([
-            [8,  4],
-            [8,  2],
-            [4,  1],
-            [7,  1],
-            [3,  2],
-            [6,  24],
-            [6,  26],
-            [6,  25],
-            [2,  0]
-        ])));
-
-        document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordValues(genPassForDecodedPassword(bitPackValues([
-            [8,  5],
-            [8,  0],
-            [4,  2],
-            [7,  0],
-            [3,  2],
-            [3,  3],
-            [6,  30],
-            [6,  14],
-            [6,  12],
-            [6,  29],
-            [6,  68],
-            [2,  0],
-            [2,  0],
-            [2,  0],
-            [2,  0]
-        ])));
-
-        function generateInternationalEliminationPhasePassword() {
-            const passwordArray = [
-                [8,  0x04],
-                [8,  0x02],
-                [4, parseInt(document.getElementById("InternationalEliminationPhaseParam1").value)],
-                [7, parseInt(document.getElementById("InternationalEliminationPhaseParam2").value)],
-                [3, parseInt(document.getElementById("InternationalEliminationPhaseParam3").value)],
-                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam4").value)],
-                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam5").value)],
-                [6, parseInt(document.getElementById("InternationalEliminationPhaseParam6").value)],
-                [2, parseInt(document.getElementById("InternationalEliminationPhaseParam7").value)]
-            ];
-
-            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
-            document.getElementById("InternationalEliminationPhasePassword").innerHTML = passwordString;
-        }
-
-        function generateInternationalPreliminaryPhasePassword() {
-            const passwordArray = [
-                // [8,  0x05],
-                [8, parseInt(document.getElementById("InternationalPreliminaryPhaseParamGamesLeft").value)],
-                [8,  0x00],
-                [4, parseInt(document.getElementById("InternationalPreliminaryPhaseParam1").value)],
-                [7, parseInt(document.getElementById("InternationalPreliminaryPhaseParam2").value)],
-                [3, parseInt(document.getElementById("InternationalPreliminaryPhaseParam3").value)],
-                [3, parseInt(document.getElementById("InternationalPreliminaryPhaseParam4").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam5").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam6").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam7").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam8").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminaryPhaseParam9").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam10").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam11").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam12").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminaryPhaseParam13").value)]
-            ];
-
-            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
-            document.getElementById("InternationalPreliminaryPhasePassword").innerHTML = passwordString;
-        }
-
-        function generateInternationalPreliminary2PhasePassword() {
-            const passwordArray = [
-                [8,  0x04],
-                [8,  0x00],
-                [4, parseInt(document.getElementById("InternationalPreliminary2PhaseParam1").value)],
-                [7, parseInt(document.getElementById("InternationalPreliminary2PhaseParam2").value)],
-                [3, parseInt(document.getElementById("InternationalPreliminary2PhaseParam3").value)],
-                [3, parseInt(document.getElementById("InternationalPreliminary2PhaseParam4").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam5").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam6").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam7").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam8").value)],
-                [6, parseInt(document.getElementById("InternationalPreliminary2PhaseParam9").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam10").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam11").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam12").value)],
-                [2, parseInt(document.getElementById("InternationalPreliminary2PhaseParam13").value)]
-            ];
-
-            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
-            document.getElementById("InternationalPreliminary2PhasePassword").innerHTML = passwordString;
-        }
-
         console.log("-----------------------");
 
         // Type is team, boolean or gameResult (0 = loss, 1 = draw, 2 = win)
@@ -1523,6 +1344,92 @@
                 ]
             }
         ];
+
+        const passwordTypeSelector = document.getElementById("passwordTypeSelector");
+        const passwordParametersForm = document.getElementById("passwordParametersForm");
+        const generatedPassword = document.getElementById("generatedPassword");
+
+        function getMaxValue(bits) {
+            return Math.pow(2, bits) - 1;
+        }
+
+        function buildPasswordForm(typeIndex) {
+            const selected = passwordMap[typeIndex];
+            if (!selected) {
+                passwordParametersForm.innerHTML = "";
+                return;
+            }
+
+            passwordParametersForm.innerHTML = "";
+            selected.values.forEach((entry, index) => {
+                const label = document.createElement("label");
+                label.setAttribute("for", `entry${index}`);
+                label.textContent = `${entry.description}:`;
+
+                let input;
+                if (entry.type === "team") {
+                    input = document.createElement("select");
+                    input.classList.add("teamInput");
+                    populateTeamSelect(input);
+                } else if (entry.type === "gameResult") {
+                    input = document.createElement("select");
+                    input.classList.add("victoryInput");
+                    populateVictorySelect(input);
+                } else {
+                    input = document.createElement("input");
+                    input.type = "number";
+                    input.min = "0";
+                    input.max = `${getMaxValue(entry.bits)}`;
+                }
+
+                input.id = `entry${index}`;
+                input.value = entry.default;
+                label.appendChild(input);
+                passwordParametersForm.appendChild(label);
+            });
+        }
+
+        function getSelectedPasswordEntry() {
+            const selectedIndex = Number(passwordTypeSelector.value);
+            return passwordMap[selectedIndex] || passwordMap[0];
+        }
+
+        function generateInternationalEliminationPhasePassword() {
+            const selected = getSelectedPasswordEntry();
+            if (!selected) {
+                return;
+            }
+
+            const passwordArray = selected.values.map((entry, index) => {
+                const input = document.getElementById(`entry${index}`);
+                const rawValue = input ? Number(input.value) : entry.default;
+                const value = Number.isNaN(rawValue) ? entry.default : rawValue;
+                return [entry.bits, value];
+            });
+
+            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
+            generatedPassword.textContent = passwordString;
+        }
+
+        function initializePasswordSelector() {
+            passwordMap.forEach((entry, index) => {
+                const option = document.createElement("option");
+                option.value = index;
+                option.textContent = `${index} - ${entry.passwordFor}`;
+                passwordTypeSelector.appendChild(option);
+            });
+
+            passwordTypeSelector.value = "0";
+            buildPasswordForm(0);
+            generateInternationalEliminationPhasePassword();
+        }
+
+        passwordTypeSelector.addEventListener("change", () => {
+            buildPasswordForm(Number(passwordTypeSelector.value));
+            generateInternationalEliminationPhasePassword();
+        });
+
+        initializePasswordSelector();
     </script>
 </body>
 
