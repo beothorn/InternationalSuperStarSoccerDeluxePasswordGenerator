@@ -10,7 +10,7 @@
 <body>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Courier New", Courier, monospace;
             margin: 0;
             padding: 0;
             display: flex;
@@ -54,6 +54,10 @@
             font-weight: bold;
         }
 
+        #generatedPassword {
+            white-space: pre-line;
+        }
+
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
         #passwordParametersForm label {
             display: flex;
@@ -78,7 +82,9 @@
     <div id="passwordParametersForm"></div>
     <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
     <div id="generatedPasswordContainer">
-        <p id="generatedPassword">BBBB BBBB BBBB BBBB</p>
+        <p id="generatedPassword">⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽
+⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽
+⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽</p>
     </div>
 
     <div>
@@ -1394,6 +1400,25 @@
             return passwordMap[selectedIndex] || passwordMap[0];
         }
 
+        function formatPasswordForDisplay(passwordString) {
+            const cleaned = passwordString.replace(/\s+/g, "").slice(0, 60);
+            const padded = cleaned.padEnd(60, "⚽");
+            const groups = [];
+            for (let i = 0; i < 12; i++) {
+                groups.push(padded.slice(i * 5, i * 5 + 5));
+            }
+
+            return [
+                groups.slice(0, 4).join(" "),
+                groups.slice(4, 8).join(" "),
+                groups.slice(8, 12).join(" ")
+            ].join("\n");
+        }
+
+        function updateGeneratedPassword(passwordString) {
+            generatedPassword.textContent = formatPasswordForDisplay(passwordString);
+        }
+
         function generateInternationalEliminationPhasePassword() {
             const selected = getSelectedPasswordEntry();
             if (!selected) {
@@ -1408,7 +1433,7 @@
             });
 
             const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
-            generatedPassword.textContent = passwordString;
+            updateGeneratedPassword(passwordString);
         }
 
         function initializePasswordSelector() {
