@@ -402,6 +402,7 @@
             return binary;
         }
 
+        // ROR - Rotate Right
         function ror(value, carry) {
             const newCarry = value & 0x01; // Extract rightmost bit as the new carry
             const newValue = ((value >> 1) | (carry << 15)) & 0xFFFF; // Shift right and insert carry into the leftmost bit
@@ -411,6 +412,7 @@
             };
         }
 
+        // ROL - Rotate Left
         function rol(value, carry) {
             const newCarry = (value >> 15) & 0x01; // Extract leftmost bit as the new carry
             const newValue = ((value << 1) | carry) & 0xFFFF; // Shift left and insert carry into the rightmost bit 
