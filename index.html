@@ -56,6 +56,8 @@
 
         #generatedPassword {
             white-space: pre-line;
+            font-size: 2em;
+            font-weight: bold;
         }
 
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
@@ -82,9 +84,9 @@
     <div id="passwordParametersForm"></div>
     <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
     <div id="generatedPasswordContainer">
-        <p id="generatedPassword">⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽
-⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽
-⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽ ⚽⚽⚽⚽⚽</p>
+        <p id="generatedPassword">XXXXX XXXXX XXXXX XXXXX
+XXXXX XXXXX XXXXX XXXXX
+XXXXX XXXXX XXXXX XXXXX</p>
     </div>
 
     <div>
@@ -1402,7 +1404,7 @@
 
         function formatPasswordForDisplay(passwordString) {
             const cleaned = passwordString.replace(/\s+/g, "").slice(0, 60);
-            const padded = cleaned.padEnd(60, "⚽");
+            const padded = cleaned.padEnd(60, "X");
             const groups = [];
             for (let i = 0; i < 12; i++) {
                 groups.push(padded.slice(i * 5, i * 5 + 5));
