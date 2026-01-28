@@ -58,6 +58,7 @@
             white-space: pre-line;
             font-size: 2em;
             font-weight: bold;
+            text-align: center;
         }
 
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
@@ -84,9 +85,9 @@
     <div id="passwordParametersForm"></div>
     <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
     <div id="generatedPasswordContainer">
-        <p id="generatedPassword">XXXXX XXXXX XXXXX XXXXX
-XXXXX XXXXX XXXXX XXXXX
-XXXXX XXXXX XXXXX XXXXX</p>
+        <p id="generatedPassword">••••• ••••• ••••• •••••
+••••• ••••• ••••• •••••
+••••• ••••• ••••• •••••</p>
     </div>
 
     <div>
@@ -1318,7 +1319,7 @@ XXXXX XXXXX XXXXX XXXXX</p>
                     { bits: 4, default: 0x08, type: "", description: "Param 1" },
                     { bits: 7, default: 0x00, type: "", description: "Param 2" },
                     { bits: 3, default: 0x02, type: "", description: "Param 3" },
-                    { bits: 6, default: 0x1e, type: "", description: "Player team" },
+                    { bits: 6, default: 0x1e, type: "", description: "Param 4" },
                     { bits: 6, default: 0x03, type: "", description: "Param 5" },
                     { bits: 6, default: 0x7f, type: "", description: "Param 6" },
                     { bits: 6, default: 0x23, type: "", description: "Param 7"},
@@ -1347,8 +1348,8 @@ XXXXX XXXXX XXXXX XXXXX</p>
                     { bits: 6, default :0x04, type: "", description: "Param 30"},
                     { bits: 6, default :0x12, type: "", description: "Param 31"},
                     { bits: 6, default :0x7f, type: "", description: "Param 32"},
-                    { bits: 6, default :0x0b, type: "", description: "Param 33"},
-                    { bits: 6, default :0x1e, type: "", description: "Param 34"}
+                    { bits: 6, default :0x0b, type: "team", description: "Other finalist team"},
+                    { bits: 6, default :0x1e, type: "team", description: "Player team" }
                 ]
             }
         ];
@@ -1404,7 +1405,7 @@ XXXXX XXXXX XXXXX XXXXX</p>
 
         function formatPasswordForDisplay(passwordString) {
             const cleaned = passwordString.replace(/\s+/g, "").slice(0, 60);
-            const padded = cleaned.padEnd(60, "X");
+            const padded = cleaned.padEnd(60, "•");
             const groups = [];
             for (let i = 0; i < 12; i++) {
                 groups.push(padded.slice(i * 5, i * 5 + 5));
