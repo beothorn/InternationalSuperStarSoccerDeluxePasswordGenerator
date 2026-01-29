@@ -18,12 +18,15 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #f0f0f0;
+            background: radial-gradient(circle at top, #1a1fbf 0%, #060069 55%, #040047 100%);
+            color: #f4f1ff;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 20px;
+            color: #ffffa0;
+            text-shadow: 0 2px 0 #001cf8;
         }
 
         div {
@@ -35,23 +38,49 @@
         label {
             display: block;
             margin-bottom: 5px;
+            color: #f4f1ff;
         }
 
         textarea {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
+            border-radius: 8px;
+            border: 2px solid #001cf8;
+            background-color: #0d0b7a;
+            color: #ffffd1;
         }
 
         button {
             padding: 10px 20px;
             margin: 5px;
             cursor: pointer;
+            border-radius: 999px;
+            border: 2px solid #ffa800;
+            background: #0d0b7a;
+            color: #ffffa0;
+            font-weight: bold;
+            box-shadow: 0 0 0 2px #001cf8;
         }
 
         #passwordIssues {
-            color: red;
+            color: #ff7a7a;
             font-weight: bold;
+        }
+
+        #passwordTypeSelector {
+            width: 90%;
+            max-width: 600px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #001cf8;
+            background-color: #0d0b7a;
+            color: #ffffd1;
+        }
+
+        #generatedPasswordContainer {
+            width: 90%;
+            max-width: 600px;
         }
 
         #generatedPassword {
@@ -59,6 +88,14 @@
             font-size: 2em;
             font-weight: bold;
             text-align: center;
+            color: #ffffff;
+            background-color: #060069;
+            border: 12px solid #ffffa0;
+            border-radius: 14px;
+            padding: 16px;
+            -webkit-text-stroke: 1px #001cf8;
+            text-shadow: 0 2px 0 #001cf8;
+            box-shadow: 0 0 0 3px #ffa800, 0 8px 16px rgba(0, 0, 0, 0.4);
         }
 
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
@@ -77,6 +114,17 @@
             box-sizing: border-box;
             text-align: left;    /* keep text inside input/select left-aligned */
             flex: 0 0 220px;     /* don't grow or shrink, keep fixed column width */
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 2px solid #001cf8;
+            background-color: #0d0b7a;
+            color: #ffffd1;
+        }
+
+        @media (max-width: 530px) {
+            #generatedPassword {
+                font-size: 1.5em;
+            }
         }
     </style>
     <h1>International Superstar Soccer Deluxe Password Generator</h1>
