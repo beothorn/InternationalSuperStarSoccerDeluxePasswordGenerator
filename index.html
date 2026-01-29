@@ -76,7 +76,7 @@
             border: 2px solid #001cf8;
             background-color: #0d0b7a;
             color: #ffffd1;
-	    margin: 10px;
+	        margin: 10px;
         }
 
         #generatedPasswordContainer {
@@ -107,6 +107,14 @@
             gap: 12px; /* small space between label text and input column */
         }
 
+        #big-title {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            color: #ffffa0;
+            text-shadow: 0 2px 0 #001cf8;
+        }
+
         /* fixed width for inputs/selects (adjust width if you want more space for long names) */
         #passwordParametersForm label input,
         #passwordParametersForm label select {
@@ -122,13 +130,13 @@
             color: #ffffd1;
         }
 
-        @media (max-width: 530px) {
+        @media (max-width: 546px) {
             #generatedPassword {
-                font-size: 1.5em;
+                font-size: 1.2em;
             }
         }
     </style>
-    <h1>International Superstar Soccer Deluxe Password Generator</h1>
+    <h1 id="big-title">International Superstar Soccer Deluxe Password Generator</h1>
 
     <select id="passwordTypeSelector"></select>
     <div id="passwordParametersForm"></div>
