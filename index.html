@@ -99,6 +99,18 @@
             box-shadow: 0 0 0 3px #ffa800, 0 8px 16px rgba(0, 0, 0, 0.4);
         }
 
+        #advancedSection {
+            display: none;
+        }
+
+        #advancedSection.is-visible {
+            display: block;
+        }
+
+        #advancedToggle {
+            margin-top: 10px;
+        }
+
         /* layout: label text on the left, input/select aligned in a fixed-size column on the right */
         #passwordParametersForm label {
             display: flex;
@@ -146,8 +158,9 @@
 ••••• ••••• ••••• •••••
 ••••• ••••• ••••• •••••</p>
     </div>
+    <button id="advancedToggle" type="button" aria-expanded="false">Show advanced</button>
 
-    <div>
+    <div id="advancedSection">
         <label for="password">Password: (size <span id="passSize">0</span>)</label>
         <textarea id="password" rows="4" cols="50" oninput="convertToDecoded()">S*2nT 513</textarea>
     </div>
@@ -1414,6 +1427,8 @@
         const passwordTypeSelector = document.getElementById("passwordTypeSelector");
         const passwordParametersForm = document.getElementById("passwordParametersForm");
         const generatedPassword = document.getElementById("generatedPassword");
+        const advancedToggle = document.getElementById("advancedToggle");
+        const advancedSection = document.getElementById("advancedSection");
 
         function getMaxValue(bits) {
             return Math.pow(2, bits) - 1;
@@ -1512,6 +1527,12 @@
         passwordTypeSelector.addEventListener("change", () => {
             buildPasswordForm(Number(passwordTypeSelector.value));
             generateInternationalEliminationPhasePassword();
+        });
+
+        advancedToggle.addEventListener("click", () => {
+            const isVisible = advancedSection.classList.toggle("is-visible");
+            advancedToggle.textContent = isVisible ? "Hide advanced" : "Show advanced";
+            advancedToggle.setAttribute("aria-expanded", isVisible.toString());
         });
 
         initializePasswordSelector();
