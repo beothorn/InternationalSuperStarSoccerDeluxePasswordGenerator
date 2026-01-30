@@ -1421,6 +1421,153 @@
                     { bits: 6, default :0x0b, type: "team", description: "Other finalist team"},
                     { bits: 6, default :0x1e, type: "team", description: "Player team" }
                 ]
+            },
+            /*
+            Scenarios
+            BZMBV GB1CB BBBBB BBBBB
+            BBBBF BB
+            08 00
+            08 10
+            08 01
+            08 80
+            08 01
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 00
+            08 03
+            08 00
+            */
+            {
+                passwordFor: "Scenarios",
+                values: [
+                    { bits: 8, default: 0x00, type: "", description: "Header 1" },
+                    { bits: 8, default: 0x10, type: "", description: "Header 2" },
+                    { bits: 8, default: 0x01, type: "", description: "Param 1" },
+                    { bits: 8, default: 0x80, type: "", description: "Param 2" },
+                    { bits: 8, default: 0x01, type: "", description: "Param 3" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 4" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 5" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 6" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 7" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 8" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 9" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 10" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 11" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 12" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 13" },
+                    { bits: 8, default: 0x03, type: "", description: "Param 14" },
+                    { bits: 8, default: 0x00, type: "", description: "Param 15" }
+                ]
+            },
+            /*
+            World series
+            B*TLB GB$PV FB1HG BGGGG
+            BBBGB BBBGG GBBBB BGGGB
+            GGGBG GBBBB
+            08 20
+            08 00
+            04 01
+            04 00
+            04 04
+            07 3c
+            06 01
+            03 02
+            03 03
+            07 00
+            07 00
+            03 03
+            06 01
+            06 01
+            06 00
+            06 01
+            06 01
+            06 01
+            06 01
+            06 00
+            06 00
+            06 00
+            06 01
+            06 00
+            06 00
+            06 00
+            06 00
+            06 01
+            06 01
+            06 01
+            06 00
+            06 00
+            06 00
+            06 00
+            06 00
+            06 01
+            06 01
+            06 01
+            06 00
+            06 01
+            06 01
+            06 01
+            06 00
+            06 01
+            06 01
+            06 00
+            06 00
+            06 00
+            */
+            {
+                passwordFor: "World series",
+                values: [
+                    { bits: 8, default: 0x20, type: "", description: "Header 1" },
+                    { bits: 8, default: 0x00, type: "", description: "Header 2" },
+                    { bits: 4, default: 0x01, type: "", description: "Param 1" },
+                    { bits: 4, default: 0x00, type: "", description: "Param 2" },
+                    { bits: 4, default: 0x04, type: "", description: "Param 3" },
+                    { bits: 7, default: 0x3c, type: "", description: "Param 4" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 5" },
+                    { bits: 3, default: 0x02, type: "", description: "Param 6" },
+                    { bits: 3, default: 0x03, type: "", description: "Param 7" },
+                    { bits: 7, default: 0x00, type: "", description: "Param 8" },
+                    { bits: 7, default: 0x00, type: "", description: "Param 9" },
+                    { bits: 3, default: 0x03, type: "", description: "Param 10" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 11" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 12" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 13" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 14" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 15" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 16" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 17" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 18" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 19" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 20" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 21" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 22" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 23" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 24" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 25" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 26" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 27" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 28" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 29" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 30" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 31" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 32" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 33" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 34" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 35" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 36" },
+                    { bits: 6, default: 0x01, type: "", description: "Param 37" },
+                    { bits: 6, default: 0x01, type: "", description: "Game count" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 39" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 40" },
+                    { bits: 6, default: 0x00, type: "", description: "Param 41" }
+                ]
             }
         ];
 
@@ -1515,7 +1662,7 @@
             passwordMap.forEach((entry, index) => {
                 const option = document.createElement("option");
                 option.value = index;
-                option.textContent = `${index} - ${entry.passwordFor}`;
+                option.textContent = `${entry.passwordFor}`;
                 passwordTypeSelector.appendChild(option);
             });
 
