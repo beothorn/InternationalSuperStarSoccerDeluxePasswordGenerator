@@ -178,6 +178,7 @@
         }
     }
 
+    root.runTests = runTests;
     return { runTests };
 });
 
