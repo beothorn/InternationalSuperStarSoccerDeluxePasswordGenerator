@@ -209,6 +209,8 @@
                 </ul>
         </div>
     </div>
+    <script src="IssdPasswd.js"></script>
+    <script src="IsssPasswdTests.js"></script>
     <script>
 
         const chars = "BCDFGHJKLMNPQRSTVWXYZbdfghjnqrt012345678-+  =%<>~$:\"?!  *#      ";
@@ -1654,7 +1656,15 @@
                 return [entry.bits, value];
             });
 
-            const passwordString = passwordValues(genPassForDecodedPassword(bitPackValues(passwordArray)));
+            const header1 = passwordArray[0][1] & 0xff;
+            const header2 = passwordArray[1][1] & 0xff;
+            const bitSizes = passwordArray.slice(2).map(([bits]) => bits);
+            const values = passwordArray
+                .slice(2)
+                .map(([bits, value]) => value & getMaxValue(bits));
+            const packedValues = IssdPasswd.packBits(bitSizes, values);
+            const encoded = IssdPasswd.encode(0x00, header1, header2, packedValues);
+            const passwordString = IssdPasswd.encodedToString(encoded);
             updateGeneratedPassword(passwordString);
         }
 
