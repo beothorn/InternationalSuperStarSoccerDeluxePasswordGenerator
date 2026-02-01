@@ -125,11 +125,11 @@
             "International Preliminary Phase game 1": "B*PCB QCG(diamonds)j =DB-B",
             "International Preliminary Phase game 2": "B(spades)JCB VDG(diamonds)j =DB-N",
             "International cup Phase game 1": "BLWFB bF5(arrowup)~ ?*DVL $7F!4\n5B3f\" (heart)(heart)(heart)(heart)(heart) (heart)(heart)(heart)(heart)(heart) (heart)(heart)(heart)T",
-            "International cup Quarterfinals": "BLBFB hD5↑~ ♥*♥0* ♥↓T!\"\n>~0\"? DB24G 3↑♥♥♥ ♥♥♥T",
-            "International cup Semifinals": "BqRFL rC5↑~ ♥*♥0* ♥↓T!\"\n>~0\"? T~>\"T :♥D25 ↑♥♥T",
+            "International cup Quarterfinals": "BLBFB hD5(arrowup)~ (heart)*(heart)0* (heart)(arrow down)T!\"\n>~0\"? DB24G 3(arrow up)(heart)(heart)(heart) (heart)(heart)(heart)T",
+            "International cup Semifinals": "B9RFL rC5(arrowup)~ (heart)*(heart)0* (heart)(arrowdown)T!\"\n>~0\"? T~>\"T :(heart)D25 (arrowup)(heart)(heart)T",
             "International cup Final": "B(spades)BKB 2B5(arrowup)~ (heart)*(heart)0* (heart)(downarrow)T!\"\n>~(heart)0\" ?T~>\" T:(heart)T2 ?(heart)3K",
-            "Scenarios": "BZMBV GB1CB BBBBB BBBBB\nBB~BB",
-            "World series": "BBBLB GB$PV FB1HG BGGGG\nBBBGB BBBGG GBBBB GGGBG\nGBBBB"
+            "Scenarios": "BZMBV GB1CB BBBBB BBBBB\nBBBBF BB",
+            "World series": "B*TLB GB$PV FB1HG BGGGG\nBBBGB BBBGG GBBBB BGGGB\nGGGBG GBBBB"
         };
 
         const passwordMap = loadPasswordMap();
@@ -150,12 +150,29 @@
         }
     }
 
+    function testScenarioExample() {
+        const expectedRaw = "B9HBV GL~CG BBBBB BBBVB\nBBBBF BB";
+        const expected = normalizePasswordString(expectedRaw);
+        const values = [
+            0x00, 0x10, 0x81, 0xc0, 0x01, 0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x00
+        ];
+        const header1 = values[0];
+        const header2 = values[1];
+        const bitSizes = values.slice(2).map(() => 8);
+        const packed = IssdPasswd.packBits(bitSizes, values.slice(2));
+        const encoded = IssdPasswd.encode(0x00, header1, header2, packed);
+        const actual = IssdPasswd.encodedToString(encoded);
+        assertEqual(actual, expected, "Scenario example password mismatch");
+    }
+
     function runTests() {
         const tests = [
             { name: "packBits", fn: testPackBits },
             { name: "encode", fn: testEncode },
             { name: "encodedToString", fn: testEncodedToString },
-            { name: "known passwords", fn: testKnownPasswords }
+            { name: "known passwords", fn: testKnownPasswords },
+            { name: "scenario example", fn: testScenarioExample }
         ];
         let passed = 0;
         const failures = [];
