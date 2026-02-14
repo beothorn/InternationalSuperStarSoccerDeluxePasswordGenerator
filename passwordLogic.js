@@ -1,3 +1,42 @@
+// ROR - Rotate Right
+function ror(value, carry) {
+    const newCarry = value & 0x01; // Extract rightmost bit as the new carry
+    const newValue = ((value >> 1) | (carry << 15)) & 0xFFFF; // Shift right and insert carry into the leftmost bit
+    return {
+        newValue,
+        newCarry
+    };
+}
+
+// ROL - Rotate Left
+function rol(value, carry) {
+    const newCarry = (value >> 15) & 0x01; // Extract leftmost bit as the new carry
+    const newValue = ((value << 1) | carry) & 0xFFFF; // Shift left and insert carry into the rightmost bit 
+    return {
+        newValue,
+        newCarry
+    };
+}
+
+function readFromResultInMemory(memory, index) {
+    if (!memory[index]) memory[index] = 0;
+    if (!memory[index + 1]) memory[index + 1] = 0;
+    // each address is 8 bit, but we have the 16 bit on on this logic
+    return (memory[index] & 0xFF) | (memory[index + 1] << 8);
+}
+
+// Writes an 16 bit value on two 8 bit memory addresses, little endian
+function writeOnResultInMemory(memory, index, value) {
+    if (!memory[index]) memory[index] = 0;
+    if (!memory[index + 1]) memory[index + 1] = 0;
+    const valH = (value >> 8) & 0xFF;
+    const valL = value & 0xFF;
+
+    memory[index] = valL;
+    memory[index + 1] = valH;
+}
+
+
 /**
  * Given an array of tuples [bitCount, value], pack the values into a bit-packed array
  * according to the algorithm used by the game.
@@ -96,12 +135,11 @@ function calculateChecksum(data) {
 }
 
 /**
- * Given a set of values, encode them according to the algorithm used by ISSD.
+ * Given a set of values, decode them according to the algorithm used by ISSD.
  * @param {*} passwordValues 
  * @returns 
  */
-function encodeValues(passwordValues) {
-    // TODO: This is a copy of the decode, I need to figure out how to reverse it
+function decodeValues(passwordValues) {
     /*
     The loop increases multipleOfSixCounter by six on each pass
     From this we get the quotient and the remainder from a division by 8
@@ -129,7 +167,7 @@ function encodeValues(passwordValues) {
         let y = remainder; // Y is another regiistry, used as index for memory accesses (X is anotehr one)
         let currentChar = passwordValues[passwordIndex];
 
-        if (currentChar > biggestPossibleChar) { // string end marker is 0xff
+        if (currentChar > biggestPossibleChar) { // string end marker is 0xff, which is bigger than any possible char, so we can stop decoding
             break;
         }
         ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right, don't know why
@@ -147,6 +185,14 @@ function encodeValues(passwordValues) {
         multipleOfSixCounter += 6; // next 6 multiplier
     } while (multipleOfSixCounter < 360); // from the ISSD code, we know the password is 60 characters long
     return result;
+}
+
+/**
+ * Given a set of values, encode them according to the algorithm used by ISSD.
+ * @param {*} values 
+ * @returns 
+ */
+function encodeValues(values) {
 }
 
 function generatePassword(checksum, mask, values) {

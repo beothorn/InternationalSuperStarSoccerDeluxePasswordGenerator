@@ -7,6 +7,8 @@ function assertEquals(actual, expected, message) {
 function runTests() {
     try {
         testPackBits();
+        testChecksum();
+        testDecodeValues();
         console.log("All tests executed!");
     } catch (e) {
         console.error(e.message);
@@ -34,4 +36,19 @@ function testChecksum() {
     const checksum = calculateChecksum([0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80]);
     assertEquals(checksum, 0xac, "Checksum test failed");
     console.log("testChecksum finished.");
+}
+
+function testDecodeValues() {
+    console.log("Running testDecodeValues...");
+    
+    const encoded = [0x1, 0x2, 0x3, 0xff]; // 0xff is the string end marker
+    const decoded = decodeValues(encoded);
+    const expected = [0x81, 0x30, 0x00];
+    
+    assertEquals(decoded.length, expected.length, "Decoded length mismatch");
+    for (let i = 0; i < expected.length; i++) {
+        assertEquals(decoded[i], expected[i], `Decoded value mismatch at index ${i} for value ${expected} where actual value is ${decoded}`);
+    }
+
+    console.log("testDecodeValues finished.");
 }

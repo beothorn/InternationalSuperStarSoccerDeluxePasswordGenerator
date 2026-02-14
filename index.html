@@ -209,97 +209,13 @@
                 </ul>
         </div>
     </div>
+    <script src="constants.js"></script>
     <script src="passwords.js"></script>
-    <script src="passwordEncoding.js"></script>
+    <script src="passwordLogic.js"></script>
     <script src="tests.js"></script>
     <script>
 
-        const chars = "BCDFGHJKLMNPQRSTVWXYZbdfghjnqrt012345678-+  =%<>~$:\"?!  *#      ";
-        const biggestPossibleChar = chars.length - 1;
-        const specialChars = {
-            "division": 42,
-            "÷": 42,
-            42: "÷",
-            "pi": 43,
-            "π": 43,
-            43: "π",
-            "arrowDown": 54,
-            "↓": 54,
-            54: "↓",
-            "arrowUp": 55,
-            "↑": 55,
-            55: "↑",
-            "note": 58,
-            "♪": 58,
-            58: "♪",
-            "star": 59,
-            "★": 59,
-            59: "★",
-            "spades": 60,
-            "♠": 60,
-            60: "♠",
-            "diamonds": 61,
-            "♦": 61,
-            61: "♦",
-            "clubs": 62,
-            "♣": 62,
-            62: "♣",
-            "hearts": 63,
-            "♥": 63,
-            63: "♥",
-        };
-
-        const victoryStates = [
-            { value: 0, label: "Defeat" },
-            { value: 1, label: "Draw" },
-            { value: 2, label: "Win" }
-        ];
-
-        const teams = [
-            { value: 0,  label: "Italy" },
-            { value: 1,  label: "Holland" },
-            { value: 2,  label: "England" },
-            { value: 3,  label: "Norway" },
-            { value: 4,  label: "Spain" },
-            { value: 5,  label: "Ireland" },
-            { value: 6,  label: "Portugal" },
-            { value: 7,  label: "Denmark" },
-            { value: 8,  label: "Germany" },
-            { value: 9,  label: "France" },
-            { value: 10, label: "Belgium" },
-            { value: 11, label: "Sweden" },
-            { value: 12, label: "Romania" },
-            { value: 13, label: "Bulgaria" },
-            { value: 14, label: "Russia" },
-            { value: 15, label: "Swiss" },
-            { value: 16, label: "Greece" },
-            { value: 17, label: "Croatia" },
-            { value: 18, label: "Austria" },
-            { value: 19, label: "Wales" },
-            { value: 20, label: "Scotland" },
-            { value: 21, label: "N. Ireland" },
-            { value: 22, label: "The Czech Rep." },
-            { value: 23, label: "Poland" },
-            { value: 24, label: "Japan" },
-            { value: 25, label: "S. Korea" },
-            { value: 26, label: "Turkey" },
-            { value: 27, label: "Nigeria" },
-            { value: 28, label: "Cameroon" },
-            { value: 29, label: "Morocco" },
-            { value: 30, label: "Brazil" },
-            { value: 31, label: "Argentina" },
-            { value: 32, label: "Columbia" },
-            { value: 33, label: "Mexico" },
-            { value: 34, label: "USA" },
-            { value: 35, label: "Uruguay" },
-            { value: 36, label: "All Star" },
-            { value: 37, label: "Eurostar.a" },
-            { value: 38, label: "Eurostar.b" },
-            { value: 39, label: "Asian star" },
-            { value: 40, label: "AfricanStar" },
-            { value: 41, label: "AllAmericanStar" }
-        ];
-
+ 
         function populateTeamSelect(select) {
             teams.forEach(team => {
                 const option = document.createElement("option");
@@ -323,27 +239,27 @@
         function passwordStringTo8bitArray(passwordString) {
             // Remove spaces and split by special character markers
             const parts = passwordString.replace(/\s+/g, '').split(/[()]/);
-            let decodedPassword = [];
+            let passAsEightBitArray = [];
 
             for (const part of parts) {
                 if (specialChars[part] !== undefined) {
                     // If part is a special character, get its value from specialChars
-                    decodedPassword.push(specialChars[part]);
+                    passAsEightBitArray.push(specialChars[part]);
                 } else {
                     // Otherwise, map each character to its index in chars
                     for (const char of part) {
                         const index = chars.indexOf(char);
                         if (index === -1) {
-                            decodedPassword.push(specialChars[char]);
+                            passAsEightBitArray.push(specialChars[char]);
                         } else {
-                            decodedPassword.push(index);
+                            passAsEightBitArray.push(index);
                         }
                     }
                 }
             }
             // Add the final value of 255
-            decodedPassword.push(255);
-            return decodedPassword;
+            passAsEightBitArray.push(255);
+            return passAsEightBitArray;
         }
 
         function toHex(value) {
@@ -397,44 +313,6 @@
             binary = highByte + " " + lowByte + " - " + toHex((value >> 8) & 0xFF) + " " + toHex(value & 0xFF);
 
             return binary;
-        }
-
-        // ROR - Rotate Right
-        function ror(value, carry) {
-            const newCarry = value & 0x01; // Extract rightmost bit as the new carry
-            const newValue = ((value >> 1) | (carry << 15)) & 0xFFFF; // Shift right and insert carry into the leftmost bit
-            return {
-                newValue,
-                newCarry
-            };
-        }
-
-        // ROL - Rotate Left
-        function rol(value, carry) {
-            const newCarry = (value >> 15) & 0x01; // Extract leftmost bit as the new carry
-            const newValue = ((value << 1) | carry) & 0xFFFF; // Shift left and insert carry into the rightmost bit 
-            return {
-                newValue,
-                newCarry
-            };
-        }
-
-        function readFromResultInMemory(memory, index) {
-            if (!memory[index]) memory[index] = 0;
-            if (!memory[index + 1]) memory[index + 1] = 0;
-            // each address is 8 bit, but we have the 16 bit on on this logic
-            return (memory[index] & 0xFF) | (memory[index + 1] << 8);
-        }
-
-        // Writes an 16 bit value on two 8 bit memory addresses, little endian
-        function writeOnResultInMemory(memory, index, value) {
-            if (!memory[index]) memory[index] = 0;
-            if (!memory[index + 1]) memory[index + 1] = 0;
-            const valH = (value >> 8) & 0xFF;
-            const valL = value & 0xFF;
-
-            memory[index] = valL;
-            memory[index + 1] = valH;
         }
 
         // Given the password value array, returns the decoded password
