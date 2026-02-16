@@ -4,11 +4,25 @@ function assertEquals(actual, expected, message) {
     }
 }
 
+function assertArrayEquals(actual, expected, message) {
+    if (actual.length !== expected.length) {
+        throw new Error(`${message}\nExpected length: ${expected.length}\nActual length: ${actual.length}`);
+    }
+    for (let i = 0; i < expected.length; i++) {
+        if (actual[i] !== expected[i]) {
+            throw new Error(`${message}\nExpected[${i}]: ${expected[i]}\nActual[${i}]: ${actual[i]}`);
+        }
+    }
+}
+
+const toBinaryArray = (arr) => arr.map(x => x.toString(2).padStart(8, '0')).join(' ');
+
 function runTests() {
     try {
         testPackBits();
         testChecksum();
         testDecodeValues();
+        testDecodeValuesEdgeCases();
         console.log("All tests executed!");
     } catch (e) {
         console.error(e.message);
@@ -41,9 +55,17 @@ function testChecksum() {
 function testDecodeValues() {
     console.log("Running testDecodeValues...");
     
-    const encoded = [0x1, 0x2, 0x3, 0xff]; // 0xff is the string end marker
+    const encoded = [0b00000001, 0b00000010, 0b00000011, 0xff]; // 0xff is the string end marker
     const decoded = decodeValues(encoded);
-    const expected = [0x81, 0x30, 0x00];
+    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
+    // first value is:  index 0 bitshift 0, so we write 0b00000001 << 8 = 0b00000001_00000000 >> 0 = 0b00000001_00000000, high part on index 0 and the low part on index 1
+    // decoded is [0b00000001, 0b00000000] at this point
+    // second value is: index 0 bitshift 6, so we write 0b00000010 << 8 = 0b00000010_00000000 >> 6 = 0b10000000_00000000, high part on index 0 and the low part on index 1, using OR to not lose previous values
+    // decoded is [0b10000001, 0b00000000] at this point
+    // third value is:  index 1 bitshift 4, so we write 0b00000011 << 8 = 0b00000011_00000000 >> 4 = 0b00110000_00000000, high part on index 1 and the low part on index 2, using OR to not lose previous values
+    // decoded is [0b10000001, 0b00110000, 0b00000000] at this point
+    
+    const expected = [0b10000001, 0b00110000, 0x00];
     
     assertEquals(decoded.length, expected.length, "Decoded length mismatch");
     for (let i = 0; i < expected.length; i++) {
@@ -51,4 +73,22 @@ function testDecodeValues() {
     }
 
     console.log("testDecodeValues finished.");
+}
+
+function testDecodeValuesEdgeCases() {
+    console.log("Running testDecodeValues edge...");
+    // Biggest possible char is 00111110
+    assertArrayEquals(decodeValues([0b00111110, 0xff]), [0b00111110, 0x00], `Edge case with high bit set failed ${decodeValues([0b00111110, 0xff])}`);
+    // Biggest possible char with different shifts
+    // value 0 - 0b00100000 16 bit 0b00000000_00100000 shift 0 0b00000000_00100000, Little endian = [0b00100000, 0b00000000]
+    // [0b00000000, 0b00000000] OR [0b00100000, 0b00000000] = [0b00100000, 0b00000000]
+    // value 1 - 0b00100000 16 bit 0b00000000_00100000 shift 6 0b00001000_00000000 , Little endian = [0b00000000, 0b00001000]
+    // [0b00100000, 0b00000000] OR [0b00000000, 0b00001000] = [0b00100000, 0b00001000]
+    // value 2 - 0b00100000 16 bit 0b00000000_00100000 shift 4 0b00000010_00000000, Little endian = [0b00000000, 0b00000010]
+    // [0b00100000, 0b00001000] OR [0b00000000, 0b00000010] = [0b00100000, 0b00001000, 0b00000010]
+    assertArrayEquals(decodeValues([0b00100000, 0b00100000, 0b00100000, 0xff]), 
+        [0b00100000, 0b00001000, 0b00000010], `Edge case with high bit set failed ${toBinaryArray(decodeValues([0b00100000, 0b00100000, 0b00100000, 0xff]))}`);
+    
+
+    console.log("testDecodeValues edge finished.");
 }
