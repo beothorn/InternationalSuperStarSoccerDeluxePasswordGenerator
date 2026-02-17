@@ -23,9 +23,16 @@ function runTests() {
         testChecksum();
         testDecodeValues();
         testDecodeValuesEdgeCases();
+        testBitShiftRightWithCarry();
+        testEncodeValueAtZero();
+        testEncodeValueAtOne();
+        testEncodeValueAtTwo();
+
+        // testEncodeDecode();
         console.log("All tests executed!");
     } catch (e) {
         console.error(e.message);
+        throw e;
     }
 }
 
@@ -55,7 +62,7 @@ function testChecksum() {
 function testDecodeValues() {
     console.log("Running testDecodeValues...");
     
-    const encoded = [0b00000001, 0b00000010, 0b00000011, 0xff]; // 0xff is the string end marker
+    const encoded = [0b00000001, 0b00000010, 0b00000011, 0xff]; // 0xff is the string end marker, this is CDE
     const decoded = decodeValues(encoded);
     // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
     // first value is:  index 0 bitshift 0, so we write 0b00000001 << 8 = 0b00000001_00000000 >> 0 = 0b00000001_00000000, high part on index 0 and the low part on index 1
@@ -91,4 +98,101 @@ function testDecodeValuesEdgeCases() {
     
 
     console.log("testDecodeValues edge finished.");
+}
+
+function testEncodeValueAtZero() {
+    console.log("Running testEncodeValueAtZero...");
+    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
+    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
+    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
+    // value one gets one slot result[2]
+    // value two gets one slot result[3]
+    // value three gets two slots result[4] and result[5]
+    // second value is index 2 shift 2 
+
+    // Encode simple first value, no shifts, only repeating indexes 
+    const simpleArrayToBeEncoded = [0b00000001];
+    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass CB
+    const expectedSimple = [0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
+    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
+    const simpleDecoded = decodeValues(encodedSimple);
+    assertArrayEquals(simpleDecoded, [0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
+    console.log("testEncodeValueAtZero finished.");
+}
+
+function testEncodeValueAtOne() {
+    console.log("Running testEncodeValueAtOne...");
+
+    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
+    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
+    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
+    // value one gets one slot result[2]
+    // value two gets one slot result[3]
+    // value three gets two slots result[4] and result[5]
+    // second value is index 2 shift 2 
+
+    // value at one is slot 2 shift 4  
+    const simpleArrayToBeEncoded = [0b00000000, 0b00010000]; // interesting, 0b00000001 is not valid as second value, as it is too big after shift
+    const encodedSimple = encodeValues(simpleArrayToBeEncoded);  // pass BBCB
+    const expectedSimple = [0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
+    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
+    const simpleDecoded = decodeValues(encodedSimple);
+    assertArrayEquals(simpleDecoded, [0b00000000, 0b00010000, 0b00000000, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
+
+    console.log("testEncodeValueAtOne finished.");
+}
+
+function testEncodeValueAtTwo() {
+    console.log("Running testEncodeValueAtTwo...");
+
+    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
+    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
+    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
+    // value one gets one slot result[2]
+    // value two gets one slot result[3]
+    // value three gets two slots result[4] and result[5]
+    // second value is index 2 shift 2 
+
+    // second value is index 2 shift 2  
+    const simpleArrayToBeEncoded = [0b00000000, 0b00000000, 0b00000100];
+    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass BBBCB
+    const expectedSimple = [0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
+    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
+    const simpleDecoded = decodeValues(encodedSimple);
+    assertArrayEquals(simpleDecoded, [0b00000000, 0b00000000, 0b00000100, 0b00000000, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
+
+    console.log("testEncodeValueAtTwo finished.");
+}
+
+function testEncodeDecode() {
+    console.log("Running testEncodeDecode...");
+    const originalValues = [1, 2, 3];
+    const encoded = encodeValues(originalValues);
+    const decoded = decodeValues(encoded);
+    
+    assertArrayEquals(decoded, originalValues, `Encode-decode mismatch. Original: ${toBinaryArray(originalValues)}, Decoded: ${toBinaryArray(decoded)}`);
+
+    console.log("testEncodeDecode finished.");
+}
+
+function testBitShiftRightWithCarry() {
+    console.log("Running testBitShiftRightWithCarry...");
+    // tests for no shift
+    const newValue = bitShiftRightWithCarry(0b00000000_00100000, 0);
+    assertEquals(newValue, 0b00000000_00100000, "Bit shift right with carry failed for shift 0");
+
+    // tests for bit rotating
+    const newValue2 = bitShiftRightWithCarry(0b00000000_0000001, 1);
+    assertEquals(newValue2, 0b10000000_00000000, "Bit shift right with carry failed for shift 1");
+
+    // test for full 16 bit rotation
+    const newValue3 = bitShiftRightWithCarry(0b00000000_00000001, 16);
+    assertEquals(newValue3, 0b00000000_00000001, "Bit shift right with carry failed for shift 16");
+
+    // test for values on high bit
+    const newValue4 = bitShiftRightWithCarry(0b10000000_00000000, 1);
+    assertEquals(newValue4, 0b01000000_00000000, "Bit shift right with carry failed for high bit shift");
+
+    console.log("testBitShiftRightWithCarry finished.");
+
 }

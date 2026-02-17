@@ -1,4 +1,4 @@
-// ROR - Rotate Right
+// ROR - Rotate Right, 16 bits
 function ror(value, carry) {
     const newCarry = value & 0x01; // Extract rightmost bit as the new carry
     const newValue = ((value >> 1) | (carry << 15)) & 0xFFFF; // Shift right and insert carry into the leftmost bit
@@ -8,7 +8,7 @@ function ror(value, carry) {
     };
 }
 
-// ROL - Rotate Left
+// ROL - Rotate Left, 16 bits
 function rol(value, carry) {
     const newCarry = (value >> 15) & 0x01; // Extract leftmost bit as the new carry
     const newValue = ((value << 1) | carry) & 0xFFFF; // Shift left and insert carry into the rightmost bit 
@@ -164,13 +164,17 @@ function decodeValues(passwordValues) {
         // for character 3 we shift the value 1 right and 4 and apply to position 1
         // for character 4 we shift the value 1 right and 2 and apply to position 2
         let a = quotient; // A is the acumulator registry
-        let y = remainder; // Y is another regiistry, used as index for memory accesses (X is anotehr one)
+        let y = remainder; // Y is another registry, used as index for memory accesses (X is anotehr one)
         let currentChar = passwordValues[passwordIndex];
 
-        if (currentChar > biggestPossibleChar) { // string end marker is 0xff, which is bigger than any possible char, so we can stop decoding
-            break;
+        if (currentChar > biggestPossibleChar) { 
+            if (currentChar != 0xff) {// invalid password value
+                throw new Error("Invalid password value " + currentChar + " at index " + passwordIndex);
+            }
+            break;  // string end marker is 0xff, so we can stop decoding
         }
-        ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right, don't know why
+        
+        ({ newValue, newCarry } = ror(currentChar, carry)); // rotate right
         a = newValue;
         carry = newCarry; // we need the carry to rotate, on the SNES cpu this is the flag C
         while (y >= 0) { // rotate left the number of times we got from the division remainder
@@ -179,8 +183,13 @@ function decodeValues(passwordValues) {
             carry = newCarry;
             y--;
         }
-        a = a | readFromResultInMemory(result, quotient); // if there is already somethingn on the position, the result is the OR
+        a = a | readFromResultInMemory(result, quotient); // if there is already something on the position, the result is the OR
         writeOnResultInMemory(result, quotient, a); // maybe A has values on the high part so we write it in a way the next position gets the high value 
+
+        // print result, values in binary for debugging
+        // const resultInBinary = result.map(x => x.toString(2).padStart(8, '0')).join(' ');
+        // console.log("Current char: " + currentChar.toString(16) + " Quotient: " + quotient + " Remainder: " + remainder + " Result: " + result.map(x => x.toString(16).padStart(2, '0')).join(' ') + " Binary: " + resultInBinary);
+
         passwordIndex++; // next char from password
         multipleOfSixCounter += 6; // next 6 multiplier
     } while (multipleOfSixCounter < 360); // from the ISSD code, we know the password is 60 characters long
@@ -188,15 +197,125 @@ function decodeValues(passwordValues) {
 }
 
 /**
+ * Write to index or expand array until write is possible
+ */
+function writeToArray(array, index, value) {
+    while (index >= array.length) {
+        array.push(0);
+    }
+    array[index] = value;
+}
+
+/**
+ * Bit shift right a 16 bit value, rotating the bit.
+ * Example: 0b00000000_00000001 rotated 1 becomes 0b10000000_00000000
+ * @param {*} value 
+ * @param {*} bitShift 
+ * @returns 
+ */
+function bitShiftRightWithCarry(value, bitShift) {
+    let shiftedValue = value & 0xffff;
+    for(let i = 0; i < bitShift; i++) {
+        const carry = shiftedValue & 0x01; // Extract rightmost bit as the new carry
+        shiftedValue >>= 1; // Shift right
+        if (carry) {
+            shiftedValue |= 0x8000; // If there was a carry, set the leftmost bit
+        }
+    }
+    return shiftedValue;
+}
+
+/**
  * Given a set of values, encode them according to the algorithm used by ISSD.
+ * We can think encoding as spreading the bits of a single value.  
+ * Decoding uses a sixCounter, dividing it by eigth and using the division result as the index to write and the remainder as the bitshift.
+ * So, the division goes like: 0, 0, 1, 2, 3, 3
+ * And the remainder: 0, 6, 4, 2, 0, 6
+ * For example, the first value gets written on position 0 and 1 because the division goes 0, 0 (with shifts 0 and 6)
+ * the second value gets written only on position 1 (because the index does not repeat) with shift 4
+ * The encoded values are the password chars, and that means there is a maximum limit of 62 because the last char is chars[62] == '♥'
+ * Many encoded are possible, as for example (ignoring the shif) [0b10, 0b01] is the same as [0b00, 0b11]
+ * We are just generating valid password in the simplest way possible.
+ * Since the only constraint is maximum size, we can try writing it to the first byte, and if it does't fit and there is an extra byte, we try 
+ * moving the high part to the next byte, if there is one.
+ * That means that there are values that cannot be encoded since we cannot have a byte bigger than 62 (after the shift)
+ * 
+ * So the basic algorithm is:
+ * Get next value from values to encode
+ * Get next index on result array
+ * Get next index from the sixCounter
+ * Get next bit right shift from the sixCounter
+ * Do current shift
+ * Is the value less or equals 62?
+ * Yes - write it to result, increase sixCounter and write 0 on result until index from sixCounter increases
+ * example, first value has no shift (sixCounter == 0), if the value is 1, we write [1, 0] (because 16 bit little endian), then increase sixCounter (+6), 
+ * realize it is still same index and write [1,0] 
+ * No - We use 0b11000000 and shift left with the current shift (example 4 0b00001100_00000000)
+ * 
+ * We do AND 0b11000000 (to get the 2 highest bits), and an AND to 0b00111111 get the lower part to write on results
+ * We increase the six counter, if the index increases we throw an exception (value can't be decoded)
+ * if the index can be increased, we get the value from the first mask, shift the current sixCounter and write 
+ * the value if is less or equals 62, if more, we fail
+ * Increase counts and loop until the end
+ * 
  * @param {*} values 
  * @returns 
  */
 function encodeValues(values) {
+    let multipleOfSixCounter = 0;
+    let result = [];
+    let resultCursor = 0;
+    for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        
+        // it goes like 0 0 1 2 3 3 4 ...
+        const valuesForIndex = Math.floor(multipleOfSixCounter / 8); 
+        // if it is the same, it means the current index and next one are used for a single decoded value
+        // Also, max repetition is 2
+        const nextSlotIndex = Math.floor((multipleOfSixCounter + 6) / 8); 
+        const cantUseTwoBytes = valuesForIndex != nextSlotIndex;
+        const canUseTwoBytes = valuesForIndex == nextSlotIndex;
+
+        const bitShift = multipleOfSixCounter % 8; // it goes like 0 6 4 2 0 6 4 2 repeating
+         
+        // value is 8 bits, but shift is 16 bits
+        const shiftedValue = bitShiftRightWithCarry(value, bitShift);
+
+        // Is the value shifted greater than the maximun?
+        if (shiftedValue > biggestPossibleChar) {
+            if (cantUseTwoBytes) {
+                throw new Error("Value " + value + " cannot be encoded, it is too big after shift"); 
+            }
+            // TODO: Take care of the edge cases
+            throw new Error("NOT IMPLEMENTED"); 
+        } else {
+            // Write high part (remember, little endian)
+            writeToArray(result, resultCursor, result[resultCursor] | (shiftedValue & 0xff));
+            resultCursor++;
+            // Write low part
+            writeToArray(result, resultCursor, ((shiftedValue >> 8) & 0xff));
+            // result cursor is not increased, as the next value will be ORed
+            if (canUseTwoBytes) {
+                resultCursor++;
+                multipleOfSixCounter += 12; // next 6 multiplier
+            } else {
+                multipleOfSixCounter += 6; // next 6 multiplier
+            }
+        }
+    }   
+    return result.concat([0xff]); // concatenate the terminator
 }
 
 function generatePassword(checksum, mask, values) {
     // Implementation goes here
+
+    // Steps
+    // pack values into bit-packed array
+    // add checksum to array with value 0
+    // calculate checksum and fix it on the array
+    // concatenate 0 as the terminator
+    // encode the array using the algorithm used by the game, which is the reverse of the decoding algorithm
+    // convert result to string
 }
 
 
