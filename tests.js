@@ -27,6 +27,8 @@ function runTests() {
         testEncodeValueAtZero();
         testEncodeValueAtOne();
         testEncodeValueAtTwo();
+        testEncodeValueAtThree();
+        testEncodeFourValuesAtTheSameTime()
 
         // testEncodeDecode();
         console.log("All tests executed!");
@@ -110,7 +112,7 @@ function testEncodeValueAtZero() {
     // value three gets two slots result[4] and result[5]
     // second value is index 2 shift 2 
 
-    // Encode simple first value, no shifts, only repeating indexes 
+    // Encode simple first value, shifts 0,6, encoded on result[0] and result[1]
     const simpleArrayToBeEncoded = [0b00000001];
     const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass CB
     const expectedSimple = [0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
@@ -123,15 +125,7 @@ function testEncodeValueAtZero() {
 function testEncodeValueAtOne() {
     console.log("Running testEncodeValueAtOne...");
 
-    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
-    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
-    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
-    // value one gets one slot result[2]
-    // value two gets one slot result[3]
-    // value three gets two slots result[4] and result[5]
-    // second value is index 2 shift 2 
-
-    // value at one is slot 2 shift 4  
+    // Encode value at index 1, shifts 4, encoded on result[2] (and 3 because roteting makes it 16 bits)
     const simpleArrayToBeEncoded = [0b00000000, 0b00010000]; // interesting, 0b00000001 is not valid as second value, as it is too big after shift
     const encodedSimple = encodeValues(simpleArrayToBeEncoded);  // pass BBCB
     const expectedSimple = [0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
@@ -145,15 +139,7 @@ function testEncodeValueAtOne() {
 function testEncodeValueAtTwo() {
     console.log("Running testEncodeValueAtTwo...");
 
-    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
-    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
-    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
-    // value one gets one slot result[2]
-    // value two gets one slot result[3]
-    // value three gets two slots result[4] and result[5]
-    // second value is index 2 shift 2 
-
-    // second value is index 2 shift 2  
+    // Encode value at index 2, shifts 2, encoded on result[3] (and 4 because roteting makes it 16 bits)
     const simpleArrayToBeEncoded = [0b00000000, 0b00000000, 0b00000100];
     const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass BBBCB
     const expectedSimple = [0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
@@ -164,15 +150,32 @@ function testEncodeValueAtTwo() {
     console.log("testEncodeValueAtTwo finished.");
 }
 
-function testEncodeDecode() {
-    console.log("Running testEncodeDecode...");
-    const originalValues = [1, 2, 3];
-    const encoded = encodeValues(originalValues);
-    const decoded = decodeValues(encoded);
-    
-    assertArrayEquals(decoded, originalValues, `Encode-decode mismatch. Original: ${toBinaryArray(originalValues)}, Decoded: ${toBinaryArray(decoded)}`);
+function testEncodeValueAtThree() {
+    console.log("Running testEncodeValueAtThree...");
 
-    console.log("testEncodeDecode finished.");
+    // Encode value at index 3, shifts 0,6, encoded on result[4] and result[5]
+    const simpleArrayToBeEncoded = [0b00000000, 0b00000000, 0b00000000, 0b00000001];
+    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass BBBBCB
+    const expectedSimple = [0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000 , 0xff]; // it becomes 16 bit little endian withot shifts
+    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
+    const simpleDecoded = decodeValues(encodedSimple);
+    assertArrayEquals(simpleDecoded, [0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
+
+    console.log("testEncodeValueAtThree finished.");
+}
+
+
+function testEncodeFourValuesAtTheSameTime() {
+    console.log("Running testEncodeFourValuesAtTheSameTime...");
+
+    const simpleArrayToBeEncoded = [0b00000001, 0b00010000, 0b00000100, 0b00000001];
+    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass CBCCCB
+    const expectedSimple = [0b00000001, 0b00000000, 0b00000001, 0b00000001, 0b00000001, 0b00000000 , 0xff]; // it becomes 16 bit little endian withot shifts
+    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
+    const simpleDecoded = decodeValues(encodedSimple);
+    assertArrayEquals(simpleDecoded, [0b00000001, 0b00010000, 0b00000100, 0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
+
+    console.log("testEncodeFourValuesAtTheSameTime finished.");
 }
 
 function testBitShiftRightWithCarry() {
