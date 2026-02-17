@@ -234,34 +234,6 @@
             });
         }
 
-        // Takes a password string and converts it to a decoded array
-        // can include spaces, they will be ignored
-        function passwordStringTo8bitArray(passwordString) {
-            // Remove spaces and split by special character markers
-            const parts = passwordString.replace(/\s+/g, '').split(/[()]/);
-            let passAsEightBitArray = [];
-
-            for (const part of parts) {
-                if (specialChars[part] !== undefined) {
-                    // If part is a special character, get its value from specialChars
-                    passAsEightBitArray.push(specialChars[part]);
-                } else {
-                    // Otherwise, map each character to its index in chars
-                    for (const char of part) {
-                        const index = chars.indexOf(char);
-                        if (index === -1) {
-                            passAsEightBitArray.push(specialChars[char]);
-                        } else {
-                            passAsEightBitArray.push(index);
-                        }
-                    }
-                }
-            }
-            // Add the final value of 255
-            passAsEightBitArray.push(255);
-            return passAsEightBitArray;
-        }
-
         function toHex(value) {
             return "0x" + ('0' + value.toString(16)).slice(-2);
         }

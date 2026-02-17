@@ -336,6 +336,8 @@ function bitPackValues(values) {
 
 /**
  * Converts an encoded array to a password string.
+ * Given an array of encoded values, convert them to a password string using the chars mapping.
+ * Example: [1,2,3,4,5,6,7,8] becomes "BCDFG HJKL"
  * @param {*} encodedValues 
  * @returns 
  */
@@ -353,4 +355,36 @@ function encodedValuesToPasswordString(encodedValues){
         
     }
     return passAsString;
+}
+
+/**
+ * Takes a password string and converts it to a decoded array.
+ * Can include spaces, they will be ignored
+ * @param {*} passwordString 
+ * @returns 
+ */
+function passwordStringTo8bitArray(passwordString) {
+    // Remove spaces and split by special character markers
+    const parts = passwordString.replace(/\s+/g, '').split(/[()]/);
+    let passAsEightBitArray = [];
+
+    for (const part of parts) {
+        if (specialChars[part] !== undefined) {
+            // If part is a special character, get its value from specialChars
+            passAsEightBitArray.push(specialChars[part]);
+        } else {
+            // Otherwise, map each character to its index in chars
+            for (const char of part) {
+                const index = chars.indexOf(char);
+                if (index === -1) {
+                    passAsEightBitArray.push(specialChars[char]);
+                } else {
+                    passAsEightBitArray.push(index);
+                }
+            }
+        }
+    }
+    // Add the final value of 255
+    passAsEightBitArray.push(255);
+    return passAsEightBitArray;
 }

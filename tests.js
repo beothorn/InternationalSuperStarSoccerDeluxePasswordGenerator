@@ -27,11 +27,13 @@ function assertExceptionThrown(func, expectedMessage, message) {
 }
 
 const toBinaryArray = (arr) => arr.map(x => x.toString(2).padStart(8, '0')).join(' ');
+const toHexArray = (arr) => arr.map(x => '0x' + x.toString(16).padStart(2, '0')).join(' ');
 
 function runTests() {
     try {
         testPackBits();
         testChecksum();
+        testPasswordToEncodedValues();
         testDecodeValues();
         testDecodeValuesEdgeCases();
         testBitShiftRightWithCarry();
@@ -42,6 +44,8 @@ function runTests() {
         testEncodeFourValuesAtTheSameTime();
         testEncodedArrayToPassword();
         testEncodedArrayToPasswordFailWithBigValue();
+        testFullPasswordDecoding();
+        testFullPasswordGenerationFromParameters();
 
         console.log("All tests executed!");
     } catch (e) {
@@ -226,4 +230,51 @@ function testEncodedArrayToPasswordFailWithBigValue() {
         "Invalid encoded value " + invalidChar + " at index 0", 
         "Expected it to fail");
     console.log("testEncodedArrayToPasswordFailWithBigValue finished.");
+}
+
+function testPasswordToEncodedValues() {
+     // Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1"
+    
+    const password = "B$NCD GC5K# K1";
+    const actual = passwordStringTo8bitArray(password);
+    const expected = [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff];
+    assertArrayEquals(actual, expected, "Password to encoded values failed " + actual);
+}
+
+function testFullPasswordDecoding() {
+    // Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1"
+    
+    const password = "B$NCD GC5K# K1";
+    const encodedValues = passwordStringTo8bitArray(password); // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
+    const expectedValues = [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00];
+    const decodedValues = decodeValues(encodedValues);
+    assertArrayEquals(decodedValues, expectedValues, "Full password decoding failed " + toHexArray(decodedValues));
+
+    encodeValues(decodedValues); // this should not throw an error, as the decoded values are valid and can be encoded back to the same password
+}
+
+function testFullPasswordGenerationFromParameters() {
+    // Will use "International Elimination Phase game 2"
+
+    // parameter tuples [bit count, value]
+    const parameters = [
+        [8,4],
+        [8,2],
+        [4,1],
+        [7,1],
+        [3,2],
+        [6,30],
+        [6,32],
+        [6,31],
+        [2,2]
+    ];
+
+    const bitPackedParams = bitPackValues(parameters);
+    const checksum = calculateChecksum(bitPackedParams);
+    // 0 is a mask applied to the whole password, we use zero to skip this masking, on the game it is random to scramble the password
+    const fullValues = [0, checksum, ...bitPackedParams]; 
+    console.log(toHexArray(fullValues));
+    const passwordEncodedValues = encodeValues(bitPackedParams);
+    const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
+    assertEquals(finalPassword, "B$NCD GC5K# K1", "Password generation from parameters failed, outputed " + finalPassword);
 }
