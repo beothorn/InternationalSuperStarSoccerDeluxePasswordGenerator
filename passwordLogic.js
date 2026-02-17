@@ -333,3 +333,24 @@ function bitPackValues(values) {
     const finalResult = fixChecksum([0,0].concat(result).concat([0]));
     return finalResult; 
 }
+
+/**
+ * Converts an encoded array to a password string.
+ * @param {*} encodedValues 
+ * @returns 
+ */
+function encodedValuesToPasswordString(encodedValues){
+    let passAsString = "";
+    for (let i = 0; i < encodedValues.length; i++) {
+        const currentValue = encodedValues[i];
+        if (currentValue > biggestPossibleChar) {
+            throw new Error("Invalid encoded value " + currentValue + " at index " + i);
+        }
+        const currentChar = chars[currentValue]; 
+        passAsString += currentChar;
+        if (i % 5 === 4) passAsString += " ";
+        if (i % 20 === 19) passAsString += "\n";
+        
+    }
+    return passAsString;
+}

@@ -15,6 +15,17 @@ function assertArrayEquals(actual, expected, message) {
     }
 }
 
+function assertExceptionThrown(func, expectedMessage, message) {
+    try {
+        func();
+        throw new Error(`${message}\nExpected an exception to be thrown with message: ${expectedMessage}`);
+    } catch (e) {
+        if (e.message !== expectedMessage) {
+            throw new Error(`${message}\nExpected exception message: ${expectedMessage}\nActual exception message: ${e.message}`);
+        }
+    }
+}
+
 const toBinaryArray = (arr) => arr.map(x => x.toString(2).padStart(8, '0')).join(' ');
 
 function runTests() {
@@ -28,9 +39,10 @@ function runTests() {
         testEncodeValueAtOne();
         testEncodeValueAtTwo();
         testEncodeValueAtThree();
-        testEncodeFourValuesAtTheSameTime()
+        testEncodeFourValuesAtTheSameTime();
+        testEncodedArrayToPassword();
+        testEncodedArrayToPasswordFailWithBigValue();
 
-        // testEncodeDecode();
         console.log("All tests executed!");
     } catch (e) {
         console.error(e.message);
@@ -197,5 +209,21 @@ function testBitShiftRightWithCarry() {
     assertEquals(newValue4, 0b01000000_00000000, "Bit shift right with carry failed for high bit shift");
 
     console.log("testBitShiftRightWithCarry finished.");
+}
 
+function testEncodedArrayToPassword() {
+    console.log("Running testEncodedArrayToPassword...");
+    const pass = encodedValuesToPasswordString([0,1,2,3,4,5,6,7,8]);
+    assertEquals(pass, "BCDFG HJKL", "Encoded array to password string failed");
+    console.log("testEncodedArrayToPassword finished.");
+}
+
+function testEncodedArrayToPasswordFailWithBigValue() {
+    console.log("Running testEncodedArrayToPasswordFailWithBigValue...");
+    const invalidChar = biggestPossibleChar + 1;
+    assertExceptionThrown( 
+        () => encodedValuesToPasswordString([invalidChar]) , 
+        "Invalid encoded value " + invalidChar + " at index 0", 
+        "Expected it to fail");
+    console.log("testEncodedArrayToPasswordFailWithBigValue finished.");
 }
