@@ -122,7 +122,7 @@ function testEncodedArrayToPassword() {
 }
 
 function testEncodedArrayToPasswordFailWithBigValue() {
-    console.log("Running testEncodedArrayToPasswordFailWithBigValue...");
+    console.log("Running testEncodedArrayToPasswordFailWithBigValue..."); 
     const invalidChar = biggestPossibleChar + 1;
     assertExceptionThrown( 
         () => encodedValuesToPasswordString([invalidChar]) , 
@@ -152,6 +152,7 @@ function testFullPasswordDecoding() {
 }
 
 function testFullPasswordGenerationFromParametersElim2() {
+    console.log("Running testFullPasswordGenerationFromParametersElim2..."); 
     // Will use "International Elimination Phase game 2"
 
     // parameter tuples [bit count, value]
@@ -176,9 +177,12 @@ function testFullPasswordGenerationFromParametersElim2() {
     const passwordEncodedValues = encodeValues(fullValues);
     const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
     assertEquals(finalPassword, "B$NCD GC5K# K1", "Password generation from parameters failed, outputed " + finalPassword);
+
+    console.log("testFullPasswordGenerationFromParametersElim2 finished.");
 }
 
 function testFullPasswordGenerationFromParametersElim3() {
+    console.log("Running testFullPasswordGenerationFromParametersElim3...");
     // Will use "International Elimination Phase game 3"
 
     // parameter tuples [bit count, value]
@@ -202,6 +206,11 @@ function testFullPasswordGenerationFromParametersElim3() {
         [2, 0x00],
     ];
 
+    const encoded = passwordStringTo8bitArray("B~jCB LBG♦j =DLBB");
+    console.log(toBinaryArray(encoded));
+    console.log(toBinaryArray(decodeValues(encoded)));
+    
+
     const bitPackedParams = packBits(parameters);
     const checksum = calculateChecksum(bitPackedParams);
     assertEquals(checksum, 0xac, "Checksum calculation failed for parameters");
@@ -209,6 +218,8 @@ function testFullPasswordGenerationFromParametersElim3() {
     const expectedFullValue = [0x00, 0xac, 0x05, 0x00, 0x02, 0x10, 0xbd, 0xc6, 0x0a, 0x08, 0x00, 0x00];
     assertArrayEquals(fullValues, expectedFullValue, "Value to encode is incorrect " + toHexArray(fullValues))
     const passwordEncodedValues = encodeValues(fullValues);
-    const decodedRoundTrip = decodeValues(passwordEncodedValues);
-    assertArrayEquals(decodedRoundTrip, expectedFullValue, "Encoded values do not decode back to expected full values");
+    const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
+    assertEquals(finalPassword, "B~jCB LBG♦j =DLBB", "Password generation from parameters failed, outputed " + finalPassword);
+
+    console.log("testFullPasswordGenerationFromParametersElim3 finished.");
 }

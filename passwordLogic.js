@@ -236,52 +236,6 @@ function bitShiftRightEightBitsWithCarry(value, bitShift) {
     return shiftedValue;
 }
 
-function getByteAt(array, index) {
-    return index < array.length && array[index] !== undefined ? array[index] : 0;
-}
-
-/**
- * Applies one decode step for a given encoded character.
- * This mirrors decodeValues() for a single multiple-of-six counter value.
- */
-function applyDecodeStep(memory, carry, currentChar, multipleOfSixCounter) {
-    const quotient = Math.floor(multipleOfSixCounter / 8);
-    const remainder = multipleOfSixCounter % 8;
-
-    let a = currentChar;
-    let nextCarry = carry;
-
-    let rotated = ror(a, nextCarry);
-    a = rotated.newValue;
-    nextCarry = rotated.newCarry;
-
-    let y = remainder;
-    while (y >= 0) {
-        rotated = rol(a, nextCarry);
-        a = rotated.newValue;
-        nextCarry = rotated.newCarry;
-        y--;
-    }
-
-    a = a | readFromResultInMemory(memory, quotient);
-    writeOnResultInMemory(memory, quotient, a);
-
-    return nextCarry;
-}
-
-function isAffectedBytesSubsetOfTarget(memory, quotient, targetValues) {
-    const lowIndex = quotient;
-    const highIndex = quotient + 1;
-    const lowTarget = getByteAt(targetValues, lowIndex);
-    const highTarget = getByteAt(targetValues, highIndex);
-    const lowValue = getByteAt(memory, lowIndex);
-    const highValue = getByteAt(memory, highIndex);
-
-    if ((lowValue & ~lowTarget) !== 0) return false;
-    if ((highValue & ~highTarget) !== 0) return false;
-    return true;
-}
-
 /**
  * Given a set of values, encode them according to the algorithm used by ISSD.
  * We can think encoding as spreading the bits of a single value.  
@@ -331,83 +285,62 @@ function isAffectedBytesSubsetOfTarget(memory, quotient, targetValues) {
  * dec    1100_0000 1010_1011 0000_0101 0000_0000 0000_0010 0001_0000 1011_1100 1011_0110 0000_1010 0000_1000 0000_0000 00000000
  *        0         1         2         3         4         5         6         7         8         9         10        11        12        13        14        15
  * 
- * 0 - [0]     [1100_0000] to [0000_0000]             shift [0]     special?
+ * 0 - ? 
  * 
  * 
  * @param {*} values 
  * @returns 
  */
 function encodeValues(values) {
-    if (!values || values.length === 0) {
-        throw new Error("Values cannot be empty");
-    }
-
-    const lastValue = values[values.length - 1];
-    if (lastValue !== 0) {
-        throw new Error("Invalid terminator " + lastValue);
-    }
-
-    const maxQuotient = values.length - 2;
-    const counters = [];
-    for (let passwordIndex = 0; Math.floor((passwordIndex * 6) / 8) <= maxQuotient; passwordIndex++) {
-        counters.push(passwordIndex * 6);
-    }
-
-    const memo = new Set();
-
-    function buildMemoKey(stepIndex, currentCarry, memory) {
-        return `${stepIndex}|${currentCarry}|${memory.slice(0, values.length).join(",")}`;
-    }
-
-    function search(stepIndex, memory, currentCarry) {
-        if (stepIndex >= counters.length) {
-            for (let i = 0; i < values.length; i++) {
-                if (getByteAt(memory, i) !== getByteAt(values, i)) return null;
-            }
-            return [];
-        }
-
-        const key = buildMemoKey(stepIndex, currentCarry, memory);
-        if (memo.has(key)) return null;
-        memo.add(key);
-
-        const counter = counters[stepIndex];
-        const quotient = Math.floor(counter / 8);
-        const nextQuotient = (stepIndex + 1 < counters.length)
-            ? Math.floor(counters[stepIndex + 1] / 8)
-            : maxQuotient + 1;
-
-        for (let candidate = 0; candidate <= biggestPossibleChar; candidate++) {
-            const nextMemory = memory.slice();
-            const nextCarry = applyDecodeStep(nextMemory, currentCarry, candidate, counter);
-
-            if (!isAffectedBytesSubsetOfTarget(nextMemory, quotient, values)) {
+    let multipleOfSixCounter = 0;
+    let result = [values[0]];
+    let resultCount = 1;
+    for (let i = 1; i < values.length; i++) {
+        const value = values[i];
+        if (i == values.length - 1) {
+            if (value == 0) {
+                // skip terminator 0
                 continue;
-            }
-
-            // Once quotient moves forward, byte quotient-1 is finalized and must match exactly.
-            if (nextQuotient > quotient) {
-                const finalizedIndex = quotient - 1;
-                if (finalizedIndex >= 0 && getByteAt(nextMemory, finalizedIndex) !== getByteAt(values, finalizedIndex)) {
-                    continue;
-                }
-            }
-
-            const tail = search(stepIndex + 1, nextMemory, nextCarry);
-            if (tail !== null) {
-                return [candidate].concat(tail);
+            } else {
+                throw new Error("Invalid terminator " + value);
             }
         }
+        
+        // it goes like 0 0 1 2 3 3 4 plus a 1 offset ...
+        const valuesForIndex = Math.floor(multipleOfSixCounter / 8) + 1; 
+        // if it is the same, it means the current index and next one are used for a single decoded value
+        // Also, max repetition is 2
+        const nextSlotIndex = Math.floor((multipleOfSixCounter + 6) / 8) + 1;
+        const willUseTwoBytes = valuesForIndex == nextSlotIndex;
+        const bitShift = (multipleOfSixCounter + 6) % 8; // it goes like 6 4 2 0 6 4 2 repeating 
+        if (willUseTwoBytes) {
+            const valH = value & 0b1111_0000;
+            const valL = value & 0b0000_1111;
 
-        return null;
-    }
+            const shiftedValue1 = bitShiftRightEightBitsWithCarry(valL, bitShift);
+            if (shiftedValue1 > biggestPossibleChar) {
+                throw new Error("Invalid value " + shiftedValue1 + " at index " + i);
+            }   
+            multipleOfSixCounter += 6;
+            const bitShift2 = (multipleOfSixCounter + 6) % 8;
+            const shiftedValue2 = bitShiftRightEightBitsWithCarry(valH, bitShift2);
+            if (shiftedValue2 > biggestPossibleChar) {
+                throw new Error("Invalid value " + shiftedValue2 + " at index " + i);
+            }   
 
-    const encodedValues = search(0, [], 0);
-    if (encodedValues === null) {
-        throw new Error("Could not encode values with current charset constraints");
-    }
-
-    return encodedValues.concat([0xff]);
+            writeToArray(result, resultCount++, shiftedValue1);
+            writeToArray(result, resultCount++, shiftedValue2);
+            multipleOfSixCounter += 6;
+        } else {
+            const shiftedValue = bitShiftRightEightBitsWithCarry(value, bitShift);
+            if (shiftedValue > biggestPossibleChar) {
+                throw new Error("Invalid value " + shiftedValue + " at index " + i);
+            }  
+            writeToArray(result, resultCount++, shiftedValue);
+            multipleOfSixCounter += 6;
+        }
+    }   
+    return result.concat([0xff]); // concatenate the terminator
 }
 
 function generatePassword(checksum, mask, values) {
