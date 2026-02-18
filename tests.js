@@ -31,6 +31,11 @@ const toHexArray = (arr) => arr.map(x => '0x' + x.toString(16).padStart(2, '0'))
 
 function runTests() {
     try {
+
+        testFullPasswordDecoding();
+
+        testFullPasswordGenerationFromParameters();
+
         testPackBits();
         testChecksum();
         testPasswordToEncodedValues();
@@ -44,8 +49,6 @@ function runTests() {
         testEncodeFourValuesAtTheSameTime();
         testEncodedArrayToPassword();
         testEncodedArrayToPasswordFailWithBigValue();
-        testFullPasswordDecoding();
-        testFullPasswordGenerationFromParameters();
 
         console.log("All tests executed!");
     } catch (e) {
@@ -243,11 +246,38 @@ function testPasswordToEncodedValues() {
 
 function testFullPasswordDecoding() {
     // Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1"
-    
+    // encoded
+    // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
+    // decoded
+    // [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00]
+    // how does 0xac becomes 0x0a?
+    // Lets look at the binaries
+    // index  0         0         1         2         3         3         4         5         6         6         7         8
+    // shift  0         6         4         2         0         6         4         2         0         6         4         2
+    // enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
+    // dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
+    //        0         1         2         3         4         5         6         7         8         9         10        11
+    // 0011_0000 shifted 6 times is 0000_1100
+    // so why the first decoded is not 0000_1100?
+    // 0000_1010 shifted 4 times is 1010_0000 
+    // 0000_1100 and 1010_0000 is 1010_1100 which matches 1
+    // 0000_0001 shifted 2 times is 0000_0100 
+    // which matches 0000_0100
+    // so it is a relation of 1 decoded to one or two encodeds (there seems to be an offset)
+    // 0 - [0]     [0000_0000] to [0000_0000]             shift [0]
+    // 1 - [1, 2]  [1010_1100] to [0011_0000, 0000_1010]  shift [6, 4]  index+1 [1,1] (0,0)
+    // 2 - [3]     [0000_0100] to [0000_0001]             shift [2]     index+1 [2]   (1)
+    // 3 - [4]     [0000_0010] to [0000_0010]             shift [0]     index+1 [3]   (2)
+    // 4 - [5,6]   [0001_0001] to [0000_0100, 0000_0001]  shift [6, 4]  index+1 [4,4] (3,3)
+    // 5 - [7]     [1001_0000] to [0010_0100]             shift [2]     index+1 [5]   (4)
+    // 6 - [8]     [0000_0111] to [0000_0111]             shift [0]     index+1 [6]   (5)
+    // 7 - [9,10]  [0111_1110] to [0011_1000, 0000_0111]  shift [6,4]   index+1 [7,7] (6,6)
+    // 8 - [11]    [1000_0000] to [0010_0000]             shift [2]     index+1 [8]   (7)
+
     const password = "B$NCD GC5K# K1";
     const encodedValues = passwordStringTo8bitArray(password); // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
-    const expectedValues = [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00];
     const decodedValues = decodeValues(encodedValues);
+    const expectedValues = [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00];
     assertArrayEquals(decodedValues, expectedValues, "Full password decoding failed " + toHexArray(decodedValues));
 
     encodeValues(decodedValues); // this should not throw an error, as the decoded values are valid and can be encoded back to the same password
@@ -269,12 +299,13 @@ function testFullPasswordGenerationFromParameters() {
         [2,2]
     ];
 
-    const bitPackedParams = bitPackValues(parameters);
+    const bitPackedParams = packBits(parameters);
     const checksum = calculateChecksum(bitPackedParams);
-    // 0 is a mask applied to the whole password, we use zero to skip this masking, on the game it is random to scramble the password
-    const fullValues = [0, checksum, ...bitPackedParams]; 
-    console.log(toHexArray(fullValues));
-    const passwordEncodedValues = encodeValues(bitPackedParams);
+    assertEquals(checksum, 0xac, "Checksum calculation failed for parameters");
+    const fullValues = addMaskAndChecksum(bitPackedParams); 
+    const expectedFullValue = [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00];
+    assertArrayEquals(fullValues, expectedFullValue, "Value to encode is incorrect " + toHexArray(fullValues))
+    const passwordEncodedValues = encodeValues(fullValues);
     const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
     assertEquals(finalPassword, "B$NCD GC5K# K1", "Password generation from parameters failed, outputed " + finalPassword);
 }

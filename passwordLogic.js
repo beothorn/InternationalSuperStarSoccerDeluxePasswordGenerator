@@ -80,6 +80,17 @@ function packBits(values) {
 }
 
 /**
+ * Calculates checksum, prepends mask, checksum and appends a terminator.
+ * @param {*} bitPackedParams 
+ * @returns 
+ */
+function addMaskAndChecksum(bitPackedParams) {
+    const checksum = calculateChecksum(bitPackedParams);
+    // 0 is a mask applied to the whole password, we use zero to skip this masking, on the game it is random to scramble the password
+    return [0, checksum, ...bitPackedParams, 0]; 
+}
+
+/**
  * Given a bit-packed array and an array of bitCounts, unpack the values.
  * @param {*} values 
  * @param {*} bitCounts 
@@ -279,14 +290,15 @@ function encodeValues(values) {
         const bitShift = multipleOfSixCounter % 8; // it goes like 0 6 4 2 0 6 4 2 repeating
          
         // value is 8 bits, but shift is 16 bits
-        const shiftedValue = bitShiftRightWithCarry(value, bitShift);
+        const shiftedValue = bitShiftRightWithCarry(value << 1, bitShift);
 
         // Is the value shifted greater than the maximun?
         if (shiftedValue > biggestPossibleChar) {
             if (cantUseTwoBytes) {
+                // Transfer excess
                 throw new Error("Value " + value + " cannot be encoded, it is too big after shift"); 
             }
-            // TODO: Take care of the edge cases
+            // TODO: Take care of the edge c    ases
             throw new Error("NOT IMPLEMENTED"); 
         } else {
             // Write high part (remember, little endian)
