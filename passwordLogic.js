@@ -273,9 +273,25 @@ function bitShiftRightEightBitsWithCarry(value, bitShift) {
  * 8 - [11]    [1000_0000] to [0010_0000]             shift [2]     index+1 [8]   (7)
  * From this, it seems like:
  * - There is an offset for the index
- * - The strategy when there are two slots is to break down the byte in 2 4 bits and add the shifted on each slot 
- * - The last 4 bits gets shifted first, and the first 4 bits last
+ * - The strategy when there are two slots is to break down the byte in 2 nibbles (4 bits) and add the shifted on each slot 
+ * - The last nible gets shifted first, and the first 4 bits last
  * - Shifts rotates on 8 bits
+ * 
+ * Thinking 16 bits LE instead
+ * index  0         0         1         2         3         3         4         5         6         6         7         8
+ * shift  0         6         4         2         0         6         4         2         0         6         4         2
+ * enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
+ * dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
+ *        0         1         2         3         4         5         6         7         8         9         10        11
+ * The decode code takes one index and write to (reads as 8 bits, writes as 16)
+ * 
+ * 0 - [0b0000_0000]  16bit 0b0000_0000_0000_0000 shift 0 -> 0b0000_0000_0000_0000
+ * writes 0b0000_0000, 0b0000_0000
+ * 0 - [1010_1100] 16bit 0b1010_1100_0000_0000 shift 6 -> 0b0000_0010_1011_0000
+ * writes 0b0000_0000, 0b0000_0000
+ * (0b0000_0000_0011_0000 >> 0) | (0b0011_0000_0000_1010 >> 6)
+ *                  
+ * 
  * 
  * After tryin it works for "B$NCD GC5K# K1" but fails for "B~jCB LBG♦j =DLBB"
  * 
@@ -292,55 +308,45 @@ function bitShiftRightEightBitsWithCarry(value, bitShift) {
  * @returns 
  */
 function encodeValues(values) {
-    let multipleOfSixCounter = 0;
-    let result = [values[0]];
-    let resultCount = 1;
-    for (let i = 1; i < values.length; i++) {
-        const value = values[i];
-        if (i == values.length - 1) {
-            if (value == 0) {
-                // skip terminator 0
-                continue;
-            } else {
-                throw new Error("Invalid terminator " + value);
-            }
-        }
-        
-        // it goes like 0 0 1 2 3 3 4 plus a 1 offset ...
-        const valuesForIndex = Math.floor(multipleOfSixCounter / 8) + 1; 
-        // if it is the same, it means the current index and next one are used for a single decoded value
-        // Also, max repetition is 2
-        const nextSlotIndex = Math.floor((multipleOfSixCounter + 6) / 8) + 1;
-        const willUseTwoBytes = valuesForIndex == nextSlotIndex;
-        const bitShift = (multipleOfSixCounter + 6) % 8; // it goes like 6 4 2 0 6 4 2 repeating 
-        if (willUseTwoBytes) {
-            const valH = value & 0b1111_0000;
-            const valL = value & 0b0000_1111;
+    if (values.length < 2) throw new Error("values too short");
 
-            const shiftedValue1 = bitShiftRightEightBitsWithCarry(valL, bitShift);
-            if (shiftedValue1 > biggestPossibleChar) {
-                throw new Error("Invalid value " + shiftedValue1 + " at index " + i);
-            }   
-            multipleOfSixCounter += 6;
-            const bitShift2 = (multipleOfSixCounter + 6) % 8;
-            const shiftedValue2 = bitShiftRightEightBitsWithCarry(valH, bitShift2);
-            if (shiftedValue2 > biggestPossibleChar) {
-                throw new Error("Invalid value " + shiftedValue2 + " at index " + i);
-            }   
+    const terminator = values[values.length - 1];
+    if (terminator !== 0x00) {
+        throw new Error("Invalid terminator " + terminator.toString(16));
+    }
 
-            writeToArray(result, resultCount++, shiftedValue1);
-            writeToArray(result, resultCount++, shiftedValue2);
-            multipleOfSixCounter += 6;
-        } else {
-            const shiftedValue = bitShiftRightEightBitsWithCarry(value, bitShift);
-            if (shiftedValue > biggestPossibleChar) {
-                throw new Error("Invalid value " + shiftedValue + " at index " + i);
-            }  
-            writeToArray(result, resultCount++, shiftedValue);
-            multipleOfSixCounter += 6;
+    // Data bytes that actually get encoded (exclude trailing 0x00 terminator)
+    const data = values.slice(0, -1);
+
+    // data is an array of 8 bit values
+    const totalBits = data.length * 8;
+    // We will break it down in 6 bit chars (our characters have 6 bits of information, since we have 64 chars)
+    const passCharCount = totalBits / 6;
+
+    const out = [];
+    for (let charCursor = 0; charCursor < passCharCount; charCursor++) {
+        const bitPos = charCursor * 6;
+        const byteIndex = bitPos >> 3;      // floor(bitPos / 8)
+        const shift = bitPos & 7;           // bitPos % 8
+
+        const b0 = data[byteIndex] ?? 0;
+        const b1 = data[byteIndex + 1] ?? 0;
+
+        // Extract 6 bits starting at (byteIndex, shift), Least Significant Bit-first within bytes
+        let sym = (b0 >> shift);
+        if (shift > 2) {
+            sym |= (b1 << (8 - shift));
         }
-    }   
-    return result.concat([0xff]); // concatenate the terminator
+        sym &= 0x3f;
+
+        if (sym > biggestPossibleChar) {
+            throw new Error(`Symbol out of range at ${charCursor}: ${sym}`);
+        }
+        out.push(sym);
+    }
+
+    out.push(0xff);
+    return out;
 }
 
 function generatePassword(checksum, mask, values) {

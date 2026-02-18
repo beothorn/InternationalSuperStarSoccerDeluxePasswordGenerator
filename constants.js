@@ -1,4 +1,4 @@
-const chars = "BCDFGHJKLMNPQRSTVWXYZbdfghjnqrt012345678-+π=%<>~$:\"?!↓↑*#♪★♠♦♣♥";
+const chars = "BCDFGHJKLMNPQRSTVWXYZbdfghjnqrt012345678-+÷π=%<>~$:\"?!↓↑*#♪★♠♦♣♥";
 const biggestPossibleChar = chars.length - 1;
 
 const specialChars = {

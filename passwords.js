@@ -59,7 +59,7 @@ const passwordMap = [
             { bits: 6, default: 0x0d, type: "team", description: "Second team on group" },
             { bits: 6, default: 0x16, type: "team", description: "Third team on group" },
             { bits: 6, default: 0x01, type: "team", description: "Param 8" },
-            { bits: 6, default: 0x44, type: "team", description: "Param 9" },
+            { bits: 6, default: 0x01, type: "team", description: "Param 9" },
             { bits: 2, default: 0x00, type: "gameResult", description: "Player last Game result" },
             { bits: 2, default: 0x00, type: "gameResult", description: "Team 1 last Game result" },
             { bits: 2, default: 0x00, type: "gameResult", description: "Team 2 last Game result" },

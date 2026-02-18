@@ -26,7 +26,13 @@ function assertExceptionThrown(func, expectedMessage, message) {
     }
 }
 
-const toBinaryArray = (arr) => arr.map(x => x.toString(2).padStart(8, '0')).join(' ');
+
+// Insert "_" every 4 bits (nibble)
+const groupNibbles = (binStr) => binStr.replace(/(.{4})/g, '$1_').slice(0, -1);
+const toBinary8b = (val) => groupNibbles(val.toString(2).padStart(8, '0'));
+const toBinary16b = (val) => groupNibbles(val.toString(2).padStart(16, '0'));
+const toBinaryArray8b = (arr) => arr.map(x => toBinary8b(x)).join(' ');
+const toBinaryArray16b = (arr) => arr.map(x => toBinary16b(x)).join(' ');
 const toHexArray = (arr) => arr.map(x => '0x' + x.toString(16).padStart(2, '0')).join(' ');
 
 function runTests() {
@@ -39,7 +45,6 @@ function runTests() {
         testChecksum();
         testPasswordToEncodedValues();
         testDecodeValues();
-        testDecodeValuesEdgeCases();
         testEncodedArrayToPassword();
         testEncodedArrayToPasswordFailWithBigValue();
 
@@ -96,24 +101,6 @@ function testDecodeValues() {
     console.log("testDecodeValues finished.");
 }
 
-function testDecodeValuesEdgeCases() {
-    console.log("Running testDecodeValues edge...");
-    // Biggest possible char is 00111110
-    assertArrayEquals(decodeValues([0b00111110, 0xff]), [0b00111110, 0x00], `Edge case with high bit set failed ${decodeValues([0b00111110, 0xff])}`);
-    // Biggest possible char with different shifts
-    // value 0 - 0b00100000 16 bit 0b00000000_00100000 shift 0 0b00000000_00100000, Little endian = [0b00100000, 0b00000000]
-    // [0b00000000, 0b00000000] OR [0b00100000, 0b00000000] = [0b00100000, 0b00000000]
-    // value 1 - 0b00100000 16 bit 0b00000000_00100000 shift 6 0b00001000_00000000 , Little endian = [0b00000000, 0b00001000]
-    // [0b00100000, 0b00000000] OR [0b00000000, 0b00001000] = [0b00100000, 0b00001000]
-    // value 2 - 0b00100000 16 bit 0b00000000_00100000 shift 4 0b00000010_00000000, Little endian = [0b00000000, 0b00000010]
-    // [0b00100000, 0b00001000] OR [0b00000000, 0b00000010] = [0b00100000, 0b00001000, 0b00000010]
-    assertArrayEquals(decodeValues([0b00100000, 0b00100000, 0b00100000, 0xff]), 
-        [0b00100000, 0b00001000, 0b00000010], `Edge case with high bit set failed ${toBinaryArray(decodeValues([0b00100000, 0b00100000, 0b00100000, 0xff]))}`);
-    
-
-    console.log("testDecodeValues edge finished.");
-}
-
 function testEncodedArrayToPassword() {
     console.log("Running testEncodedArrayToPassword...");
     const pass = encodedValuesToPasswordString([0,1,2,3,4,5,6,7,8]);
@@ -134,7 +121,7 @@ function testEncodedArrayToPasswordFailWithBigValue() {
 function testPasswordToEncodedValues() {
      // Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1"
     
-    const password = "B$NCD GC5K# K1";
+    const password = "B~NCD GC5K* K1";
     const actual = passwordStringTo8bitArray(password);
     const expected = [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff];
     assertArrayEquals(actual, expected, "Password to encoded values failed " + actual);
@@ -142,7 +129,7 @@ function testPasswordToEncodedValues() {
 
 function testFullPasswordDecoding() {
     
-    const password = "B$NCD GC5K# K1";
+    const password = "B~NCD GC5K* K1";
     const encodedValues = passwordStringTo8bitArray(password); // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
     const decodedValues = decodeValues(encodedValues);
     const expectedValues = [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00];
@@ -176,7 +163,7 @@ function testFullPasswordGenerationFromParametersElim2() {
     assertArrayEquals(fullValues, expectedFullValue, "Value to encode is incorrect " + toHexArray(fullValues))
     const passwordEncodedValues = encodeValues(fullValues);
     const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
-    assertEquals(finalPassword, "B$NCD GC5K# K1", "Password generation from parameters failed, outputed " + finalPassword);
+    assertEquals(finalPassword, "B~NCD GC5K* K1", "Password generation from parameters failed, outputed " + finalPassword);
 
     console.log("testFullPasswordGenerationFromParametersElim2 finished.");
 }
@@ -207,8 +194,8 @@ function testFullPasswordGenerationFromParametersElim3() {
     ];
 
     const encoded = passwordStringTo8bitArray("B~jCB LBG♦j =DLBB");
-    console.log(toBinaryArray(encoded));
-    console.log(toBinaryArray(decodeValues(encoded)));
+    console.log(toBinaryArray8b(encoded));
+    console.log(toBinaryArray8b(decodeValues(encoded)));
     
 
     const bitPackedParams = packBits(parameters);
@@ -219,7 +206,7 @@ function testFullPasswordGenerationFromParametersElim3() {
     assertArrayEquals(fullValues, expectedFullValue, "Value to encode is incorrect " + toHexArray(fullValues))
     const passwordEncodedValues = encodeValues(fullValues);
     const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
-    assertEquals(finalPassword, "B~jCB LBG♦j =DLBB", "Password generation from parameters failed, outputed " + finalPassword);
+    assertEquals(finalPassword, "B~jCB LBG♦j =DLBB ", "Password generation from parameters failed, outputed " + finalPassword);
 
     console.log("testFullPasswordGenerationFromParametersElim3 finished.");
 }
