@@ -31,22 +31,15 @@ const toHexArray = (arr) => arr.map(x => '0x' + x.toString(16).padStart(2, '0'))
 
 function runTests() {
     try {
-
         testFullPasswordDecoding();
-
-        testFullPasswordGenerationFromParameters();
+        testFullPasswordGenerationFromParametersElim2();
+        testFullPasswordGenerationFromParametersElim3();
 
         testPackBits();
         testChecksum();
         testPasswordToEncodedValues();
         testDecodeValues();
         testDecodeValuesEdgeCases();
-        testBitShiftRightWithCarry();
-        testEncodeValueAtZero();
-        testEncodeValueAtOne();
-        testEncodeValueAtTwo();
-        testEncodeValueAtThree();
-        testEncodeFourValuesAtTheSameTime();
         testEncodedArrayToPassword();
         testEncodedArrayToPasswordFailWithBigValue();
 
@@ -121,103 +114,6 @@ function testDecodeValuesEdgeCases() {
     console.log("testDecodeValues edge finished.");
 }
 
-function testEncodeValueAtZero() {
-    console.log("Running testEncodeValueAtZero...");
-    // the indexes goes 0, 0, 1, 2, 3, 3, 4 ... and the bitshifts goes 0, 6, 4, 2, 0, 6, 4 ...
-    // or value 0 = [0,0 on decoded shifts 0,6]; value 1 = [1 on decoded shift 4]; value 2 = [2 on decoded shift 2]; value 3 = [3,3 on decoded shifts 0,6] ....
-    // meaning that value zero gets two slots result[0] and result[1] on encoded, but on decoded it is index 0
-    // value one gets one slot result[2]
-    // value two gets one slot result[3]
-    // value three gets two slots result[4] and result[5]
-    // second value is index 2 shift 2 
-
-    // Encode simple first value, shifts 0,6, encoded on result[0] and result[1]
-    const simpleArrayToBeEncoded = [0b00000001];
-    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass CB
-    const expectedSimple = [0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
-    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
-    const simpleDecoded = decodeValues(encodedSimple);
-    assertArrayEquals(simpleDecoded, [0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
-    console.log("testEncodeValueAtZero finished.");
-}
-
-function testEncodeValueAtOne() {
-    console.log("Running testEncodeValueAtOne...");
-
-    // Encode value at index 1, shifts 4, encoded on result[2] (and 3 because roteting makes it 16 bits)
-    const simpleArrayToBeEncoded = [0b00000000, 0b00010000]; // interesting, 0b00000001 is not valid as second value, as it is too big after shift
-    const encodedSimple = encodeValues(simpleArrayToBeEncoded);  // pass BBCB
-    const expectedSimple = [0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
-    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
-    const simpleDecoded = decodeValues(encodedSimple);
-    assertArrayEquals(simpleDecoded, [0b00000000, 0b00010000, 0b00000000, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
-
-    console.log("testEncodeValueAtOne finished.");
-}
-
-function testEncodeValueAtTwo() {
-    console.log("Running testEncodeValueAtTwo...");
-
-    // Encode value at index 2, shifts 2, encoded on result[3] (and 4 because roteting makes it 16 bits)
-    const simpleArrayToBeEncoded = [0b00000000, 0b00000000, 0b00000100];
-    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass BBBCB
-    const expectedSimple = [0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000, 0xff]; // it becomes 16 bit little endian withot shifts
-    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
-    const simpleDecoded = decodeValues(encodedSimple);
-    assertArrayEquals(simpleDecoded, [0b00000000, 0b00000000, 0b00000100, 0b00000000, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
-
-    console.log("testEncodeValueAtTwo finished.");
-}
-
-function testEncodeValueAtThree() {
-    console.log("Running testEncodeValueAtThree...");
-
-    // Encode value at index 3, shifts 0,6, encoded on result[4] and result[5]
-    const simpleArrayToBeEncoded = [0b00000000, 0b00000000, 0b00000000, 0b00000001];
-    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass BBBBCB
-    const expectedSimple = [0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000 , 0xff]; // it becomes 16 bit little endian withot shifts
-    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
-    const simpleDecoded = decodeValues(encodedSimple);
-    assertArrayEquals(simpleDecoded, [0b00000000, 0b00000000, 0b00000000, 0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
-
-    console.log("testEncodeValueAtThree finished.");
-}
-
-
-function testEncodeFourValuesAtTheSameTime() {
-    console.log("Running testEncodeFourValuesAtTheSameTime...");
-
-    const simpleArrayToBeEncoded = [0b00000001, 0b00010000, 0b00000100, 0b00000001];
-    const encodedSimple = encodeValues(simpleArrayToBeEncoded); // pass CBCCCB
-    const expectedSimple = [0b00000001, 0b00000000, 0b00000001, 0b00000001, 0b00000001, 0b00000000 , 0xff]; // it becomes 16 bit little endian withot shifts
-    assertArrayEquals(encodedSimple, expectedSimple, `Encoding simple value failed ${toBinaryArray(encodeValues(simpleArrayToBeEncoded))}`);
-    const simpleDecoded = decodeValues(encodedSimple);
-    assertArrayEquals(simpleDecoded, [0b00000001, 0b00010000, 0b00000100, 0b00000001, 0b00000000], `Decoding simple value failed ${toBinaryArray(decodeValues(encodedSimple))}`);
-
-    console.log("testEncodeFourValuesAtTheSameTime finished.");
-}
-
-function testBitShiftRightWithCarry() {
-    console.log("Running testBitShiftRightWithCarry...");
-    // tests for no shift
-    const newValue = bitShiftRightWithCarry(0b00000000_00100000, 0);
-    assertEquals(newValue, 0b00000000_00100000, "Bit shift right with carry failed for shift 0");
-
-    // tests for bit rotating
-    const newValue2 = bitShiftRightWithCarry(0b00000000_0000001, 1);
-    assertEquals(newValue2, 0b10000000_00000000, "Bit shift right with carry failed for shift 1");
-
-    // test for full 16 bit rotation
-    const newValue3 = bitShiftRightWithCarry(0b00000000_00000001, 16);
-    assertEquals(newValue3, 0b00000000_00000001, "Bit shift right with carry failed for shift 16");
-
-    // test for values on high bit
-    const newValue4 = bitShiftRightWithCarry(0b10000000_00000000, 1);
-    assertEquals(newValue4, 0b01000000_00000000, "Bit shift right with carry failed for high bit shift");
-
-    console.log("testBitShiftRightWithCarry finished.");
-}
-
 function testEncodedArrayToPassword() {
     console.log("Running testEncodedArrayToPassword...");
     const pass = encodedValuesToPasswordString([0,1,2,3,4,5,6,7,8]);
@@ -245,35 +141,7 @@ function testPasswordToEncodedValues() {
 }
 
 function testFullPasswordDecoding() {
-    // Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1"
-    // encoded
-    // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
-    // decoded
-    // [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00]
-    // how does 0xac becomes 0x0a?
-    // Lets look at the binaries
-    // index  0         0         1         2         3         3         4         5         6         6         7         8
-    // shift  0         6         4         2         0         6         4         2         0         6         4         2
-    // enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
-    // dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
-    //        0         1         2         3         4         5         6         7         8         9         10        11
-    // 0011_0000 shifted 6 times is 0000_1100
-    // so why the first decoded is not 0000_1100?
-    // 0000_1010 shifted 4 times is 1010_0000 
-    // 0000_1100 and 1010_0000 is 1010_1100 which matches 1
-    // 0000_0001 shifted 2 times is 0000_0100 
-    // which matches 0000_0100
-    // so it is a relation of 1 decoded to one or two encodeds (there seems to be an offset)
-    // 0 - [0]     [0000_0000] to [0000_0000]             shift [0]
-    // 1 - [1, 2]  [1010_1100] to [0011_0000, 0000_1010]  shift [6, 4]  index+1 [1,1] (0,0)
-    // 2 - [3]     [0000_0100] to [0000_0001]             shift [2]     index+1 [2]   (1)
-    // 3 - [4]     [0000_0010] to [0000_0010]             shift [0]     index+1 [3]   (2)
-    // 4 - [5,6]   [0001_0001] to [0000_0100, 0000_0001]  shift [6, 4]  index+1 [4,4] (3,3)
-    // 5 - [7]     [1001_0000] to [0010_0100]             shift [2]     index+1 [5]   (4)
-    // 6 - [8]     [0000_0111] to [0000_0111]             shift [0]     index+1 [6]   (5)
-    // 7 - [9,10]  [0111_1110] to [0011_1000, 0000_0111]  shift [6,4]   index+1 [7,7] (6,6)
-    // 8 - [11]    [1000_0000] to [0010_0000]             shift [2]     index+1 [8]   (7)
-
+    
     const password = "B$NCD GC5K# K1";
     const encodedValues = passwordStringTo8bitArray(password); // [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
     const decodedValues = decodeValues(encodedValues);
@@ -283,7 +151,7 @@ function testFullPasswordDecoding() {
     encodeValues(decodedValues); // this should not throw an error, as the decoded values are valid and can be encoded back to the same password
 }
 
-function testFullPasswordGenerationFromParameters() {
+function testFullPasswordGenerationFromParametersElim2() {
     // Will use "International Elimination Phase game 2"
 
     // parameter tuples [bit count, value]
@@ -308,4 +176,39 @@ function testFullPasswordGenerationFromParameters() {
     const passwordEncodedValues = encodeValues(fullValues);
     const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
     assertEquals(finalPassword, "B$NCD GC5K# K1", "Password generation from parameters failed, outputed " + finalPassword);
+}
+
+function testFullPasswordGenerationFromParametersElim3() {
+    // Will use "International Elimination Phase game 3"
+
+    // parameter tuples [bit count, value]
+
+
+    const parameters = [
+        [8, 0x05],
+        [8, 0x00],
+        [4, 0x02],
+        [7, 0x00],
+        [3, 0x02],
+        [3, 0x04],
+        [6, 0x1e],
+        [6, 0x0d],
+        [6, 0x16],
+        [6, 0x01],
+        [6, 0x44],
+        [2, 0x00],
+        [2, 0x00],
+        [2, 0x00],
+        [2, 0x00],
+    ];
+
+    const bitPackedParams = packBits(parameters);
+    const checksum = calculateChecksum(bitPackedParams);
+    assertEquals(checksum, 0xac, "Checksum calculation failed for parameters");
+    const fullValues = addMaskAndChecksum(bitPackedParams); 
+    const expectedFullValue = [0x00, 0xac, 0x05, 0x00, 0x02, 0x10, 0xbd, 0xc6, 0x0a, 0x08, 0x00, 0x00];
+    assertArrayEquals(fullValues, expectedFullValue, "Value to encode is incorrect " + toHexArray(fullValues))
+    const passwordEncodedValues = encodeValues(fullValues);
+    const decodedRoundTrip = decodeValues(passwordEncodedValues);
+    assertArrayEquals(decodedRoundTrip, expectedFullValue, "Encoded values do not decode back to expected full values");
 }

@@ -139,8 +139,8 @@ function unpackBits(values, bitCounts) {
 function calculateChecksum(data) {
     let sum = 0;
     for(let currentByte = 0; currentByte < data.length; currentByte++) {
-        sum += data[currentByte];
-        sum &= 0xFF;
+        sum += data[currentByte] & 0xff;
+        sum &= 0xff;
     }
     return sum;
 }
@@ -218,22 +218,68 @@ function writeToArray(array, index, value) {
 }
 
 /**
- * Bit shift right a 16 bit value, rotating the bit.
+ * Bit shift right a 8 bit value, rotating the bit.
  * Example: 0b00000000_00000001 rotated 1 becomes 0b10000000_00000000
  * @param {*} value 
  * @param {*} bitShift 
  * @returns 
  */
-function bitShiftRightWithCarry(value, bitShift) {
-    let shiftedValue = value & 0xffff;
+function bitShiftRightEightBitsWithCarry(value, bitShift) {
+    let shiftedValue = value & 0xff;
     for(let i = 0; i < bitShift; i++) {
-        const carry = shiftedValue & 0x01; // Extract rightmost bit as the new carry
+        const carry = shiftedValue & 1; // Extract rightmost bit as the new carry
         shiftedValue >>= 1; // Shift right
         if (carry) {
-            shiftedValue |= 0x8000; // If there was a carry, set the leftmost bit
+            shiftedValue |= 0b1000_0000; // If there was a carry, set the leftmost bit
         }
     }
     return shiftedValue;
+}
+
+function getByteAt(array, index) {
+    return index < array.length && array[index] !== undefined ? array[index] : 0;
+}
+
+/**
+ * Applies one decode step for a given encoded character.
+ * This mirrors decodeValues() for a single multiple-of-six counter value.
+ */
+function applyDecodeStep(memory, carry, currentChar, multipleOfSixCounter) {
+    const quotient = Math.floor(multipleOfSixCounter / 8);
+    const remainder = multipleOfSixCounter % 8;
+
+    let a = currentChar;
+    let nextCarry = carry;
+
+    let rotated = ror(a, nextCarry);
+    a = rotated.newValue;
+    nextCarry = rotated.newCarry;
+
+    let y = remainder;
+    while (y >= 0) {
+        rotated = rol(a, nextCarry);
+        a = rotated.newValue;
+        nextCarry = rotated.newCarry;
+        y--;
+    }
+
+    a = a | readFromResultInMemory(memory, quotient);
+    writeOnResultInMemory(memory, quotient, a);
+
+    return nextCarry;
+}
+
+function isAffectedBytesSubsetOfTarget(memory, quotient, targetValues) {
+    const lowIndex = quotient;
+    const highIndex = quotient + 1;
+    const lowTarget = getByteAt(targetValues, lowIndex);
+    const highTarget = getByteAt(targetValues, highIndex);
+    const lowValue = getByteAt(memory, lowIndex);
+    const highValue = getByteAt(memory, highIndex);
+
+    if ((lowValue & ~lowTarget) !== 0) return false;
+    if ((highValue & ~highTarget) !== 0) return false;
+    return true;
 }
 
 /**
@@ -242,80 +288,126 @@ function bitShiftRightWithCarry(value, bitShift) {
  * Decoding uses a sixCounter, dividing it by eigth and using the division result as the index to write and the remainder as the bitshift.
  * So, the division goes like: 0, 0, 1, 2, 3, 3
  * And the remainder: 0, 6, 4, 2, 0, 6
- * For example, the first value gets written on position 0 and 1 because the division goes 0, 0 (with shifts 0 and 6)
- * the second value gets written only on position 1 (because the index does not repeat) with shift 4
- * The encoded values are the password chars, and that means there is a maximum limit of 62 because the last char is chars[62] == '♥'
- * Many encoded are possible, as for example (ignoring the shif) [0b10, 0b01] is the same as [0b00, 0b11]
- * We are just generating valid password in the simplest way possible.
- * Since the only constraint is maximum size, we can try writing it to the first byte, and if it does't fit and there is an extra byte, we try 
- * moving the high part to the next byte, if there is one.
- * That means that there are values that cannot be encoded since we cannot have a byte bigger than 62 (after the shift)
  * 
- * So the basic algorithm is:
- * Get next value from values to encode
- * Get next index on result array
- * Get next index from the sixCounter
- * Get next bit right shift from the sixCounter
- * Do current shift
- * Is the value less or equals 62?
- * Yes - write it to result, increase sixCounter and write 0 on result until index from sixCounter increases
- * example, first value has no shift (sixCounter == 0), if the value is 1, we write [1, 0] (because 16 bit little endian), then increase sixCounter (+6), 
- * realize it is still same index and write [1,0] 
- * No - We use 0b11000000 and shift left with the current shift (example 4 0b00001100_00000000)
+ * Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1" as example
+ * encoded
+ * [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
+ * decoded
+ * [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00]
+ * how does 0xac becomes 0x0a?
+ * Lets look at the binaries
+ * index  0         0         1         2         3         3         4         5         6         6         7         8
+ * shift  0         6         4         2         0         6         4         2         0         6         4         2
+ * enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
+ * dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
+ *        0         1         2         3         4         5         6         7         8         9         10        11
+ * 0011_0000 shifted 6 times is 0000_1100
+ * so why the first decoded is not 0000_1100?
+ * 0000_1010 shifted 4 times is 1010_0000 
+ * 0000_1100 and 1010_0000 is 1010_1100 which matches 1
+ * 0000_0001 shifted 2 times is 0000_0100 
+ * which matches 0000_0100
+ * so it is a relation of 1 decoded to one or two encodeds (there seems to be an offset)
+ * 0 - [0]     [0000_0000] to [0000_0000]             shift [0]     special?
+ * 1 - [1, 2]  [1010_1100] to [0011_0000, 0000_1010]  shift [6, 4]  index+1 [1,1] (0,0)
+ * 2 - [3]     [0000_0100] to [0000_0001]             shift [2]     index+1 [2]   (1)
+ * 3 - [4]     [0000_0010] to [0000_0010]             shift [0]     index+1 [3]   (2)
+ * 4 - [5,6]   [0001_0001] to [0000_0100, 0000_0001]  shift [6, 4]  index+1 [4,4] (3,3)
+ * 5 - [7]     [1001_0000] to [0010_0100]             shift [2]     index+1 [5]   (4)
+ * 6 - [8]     [0000_0111] to [0000_0111]             shift [0]     index+1 [6]   (5)
+ * 7 - [9,10]  [0111_1110] to [0011_1000, 0000_0111]  shift [6,4]   index+1 [7,7] (6,6)
+ * 8 - [11]    [1000_0000] to [0010_0000]             shift [2]     index+1 [8]   (7)
+ * From this, it seems like:
+ * - There is an offset for the index
+ * - The strategy when there are two slots is to break down the byte in 2 4 bits and add the shifted on each slot 
+ * - The last 4 bits gets shifted first, and the first 4 bits last
+ * - Shifts rotates on 8 bits
  * 
- * We do AND 0b11000000 (to get the 2 highest bits), and an AND to 0b00111111 get the lower part to write on results
- * We increase the six counter, if the index increases we throw an exception (value can't be decoded)
- * if the index can be increased, we get the value from the first mask, shift the current sixCounter and write 
- * the value if is less or equals 62, if more, we fail
- * Increase counts and loop until the end
+ * After tryin it works for "B$NCD GC5K# K1" but fails for "B~jCB LBG♦j =DLBB"
+ * 
+ * index  0         0         1         2         3         3         4         5         6         6         7         8
+ * shift  0         6         4         2         0         6         4         2         0         6         4         2
+ * enc    0000_0000 0010_1111 0001_1010 0000_0001 0000_0000 0000_1000 0000_0000 0000_0100 0011_1100 0001_1010 0010_1011 0000_0010 0000_1000 0000_0000 0000_0000 11111111
+ * dec    1100_0000 1010_1011 0000_0101 0000_0000 0000_0010 0001_0000 1011_1100 1011_0110 0000_1010 0000_1000 0000_0000 00000000
+ *        0         1         2         3         4         5         6         7         8         9         10        11        12        13        14        15
+ * 
+ * 0 - [0]     [1100_0000] to [0000_0000]             shift [0]     special?
+ * 
  * 
  * @param {*} values 
  * @returns 
  */
 function encodeValues(values) {
-    let multipleOfSixCounter = 0;
-    let result = [];
-    let resultCursor = 0;
-    for (let i = 0; i < values.length; i++) {
-        const value = values[i];
-        
-        // it goes like 0 0 1 2 3 3 4 ...
-        const valuesForIndex = Math.floor(multipleOfSixCounter / 8); 
-        // if it is the same, it means the current index and next one are used for a single decoded value
-        // Also, max repetition is 2
-        const nextSlotIndex = Math.floor((multipleOfSixCounter + 6) / 8); 
-        const cantUseTwoBytes = valuesForIndex != nextSlotIndex;
-        const canUseTwoBytes = valuesForIndex == nextSlotIndex;
+    if (!values || values.length === 0) {
+        throw new Error("Values cannot be empty");
+    }
 
-        const bitShift = multipleOfSixCounter % 8; // it goes like 0 6 4 2 0 6 4 2 repeating
-         
-        // value is 8 bits, but shift is 16 bits
-        const shiftedValue = bitShiftRightWithCarry(value << 1, bitShift);
+    const lastValue = values[values.length - 1];
+    if (lastValue !== 0) {
+        throw new Error("Invalid terminator " + lastValue);
+    }
 
-        // Is the value shifted greater than the maximun?
-        if (shiftedValue > biggestPossibleChar) {
-            if (cantUseTwoBytes) {
-                // Transfer excess
-                throw new Error("Value " + value + " cannot be encoded, it is too big after shift"); 
+    const maxQuotient = values.length - 2;
+    const counters = [];
+    for (let passwordIndex = 0; Math.floor((passwordIndex * 6) / 8) <= maxQuotient; passwordIndex++) {
+        counters.push(passwordIndex * 6);
+    }
+
+    const memo = new Set();
+
+    function buildMemoKey(stepIndex, currentCarry, memory) {
+        return `${stepIndex}|${currentCarry}|${memory.slice(0, values.length).join(",")}`;
+    }
+
+    function search(stepIndex, memory, currentCarry) {
+        if (stepIndex >= counters.length) {
+            for (let i = 0; i < values.length; i++) {
+                if (getByteAt(memory, i) !== getByteAt(values, i)) return null;
             }
-            // TODO: Take care of the edge c    ases
-            throw new Error("NOT IMPLEMENTED"); 
-        } else {
-            // Write high part (remember, little endian)
-            writeToArray(result, resultCursor, result[resultCursor] | (shiftedValue & 0xff));
-            resultCursor++;
-            // Write low part
-            writeToArray(result, resultCursor, ((shiftedValue >> 8) & 0xff));
-            // result cursor is not increased, as the next value will be ORed
-            if (canUseTwoBytes) {
-                resultCursor++;
-                multipleOfSixCounter += 12; // next 6 multiplier
-            } else {
-                multipleOfSixCounter += 6; // next 6 multiplier
+            return [];
+        }
+
+        const key = buildMemoKey(stepIndex, currentCarry, memory);
+        if (memo.has(key)) return null;
+        memo.add(key);
+
+        const counter = counters[stepIndex];
+        const quotient = Math.floor(counter / 8);
+        const nextQuotient = (stepIndex + 1 < counters.length)
+            ? Math.floor(counters[stepIndex + 1] / 8)
+            : maxQuotient + 1;
+
+        for (let candidate = 0; candidate <= biggestPossibleChar; candidate++) {
+            const nextMemory = memory.slice();
+            const nextCarry = applyDecodeStep(nextMemory, currentCarry, candidate, counter);
+
+            if (!isAffectedBytesSubsetOfTarget(nextMemory, quotient, values)) {
+                continue;
+            }
+
+            // Once quotient moves forward, byte quotient-1 is finalized and must match exactly.
+            if (nextQuotient > quotient) {
+                const finalizedIndex = quotient - 1;
+                if (finalizedIndex >= 0 && getByteAt(nextMemory, finalizedIndex) !== getByteAt(values, finalizedIndex)) {
+                    continue;
+                }
+            }
+
+            const tail = search(stepIndex + 1, nextMemory, nextCarry);
+            if (tail !== null) {
+                return [candidate].concat(tail);
             }
         }
-    }   
-    return result.concat([0xff]); // concatenate the terminator
+
+        return null;
+    }
+
+    const encodedValues = search(0, [], 0);
+    if (encodedValues === null) {
+        throw new Error("Could not encode values with current charset constraints");
+    }
+
+    return encodedValues.concat([0xff]);
 }
 
 function generatePassword(checksum, mask, values) {
@@ -354,9 +446,13 @@ function bitPackValues(values) {
  * @returns 
  */
 function encodedValuesToPasswordString(encodedValues){
-    let passAsString = "";
+        let passAsString = "";
     for (let i = 0; i < encodedValues.length; i++) {
         const currentValue = encodedValues[i];
+        if (i == encodedValues.length - 1 && currentValue == 0xff) {
+            // skip terminator 0xff
+            continue;
+        }
         if (currentValue > biggestPossibleChar) {
             throw new Error("Invalid encoded value " + currentValue + " at index " + i);
         }

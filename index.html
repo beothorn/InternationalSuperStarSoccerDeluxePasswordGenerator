@@ -350,70 +350,6 @@
             return false;
         }
 
-        // Given a decodedPassword, returns a password string
-        // This is a brute-force algorithm to find the password that returns the given decoded password
-        // Luckly we can check each 8 bit entry to check if it is valid, so we brute-force it for each 16 bit entry
-        // so it is not too expensive
-        function genPassForDecodedPassword(decodedPassword) {
-            let currentPassword = [0]; // initial guess
-            let currentDecodedPasswordFromGuessedPassword = getDecodedPasswordForPasswordValuesArray(currentPassword.concat(0xff));
-
-            let count = 0;
-            while (notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword) || !(isValidPasswordValues(currentPassword.concat(0xff)).valid)) { // if the guess is not good, we keep iterating
-                if (currentPassword.length > 71 || count++ > 30000 ) { // just a safeguard, max pass size (60) plus spaces plus 1
-                    console.log("Could not find password");
-                    console.log(currentPassword);
-                    let memory = "";
-                    for (let i = 0; i < currentDecodedPasswordFromGuessedPassword.length; i++) {
-                        memory += toHex(currentDecodedPasswordFromGuessedPassword[i]) + " ";
-                    }
-                    console.log(memory);
-                    memory = "";
-                    for (let i = 0; i < currentPassword.length; i++) {
-                        memory += currentPassword[i] + " ";
-                    }
-                    console.log(memory);
-                    // throw error
-                    throw new Error("Could not find password: "+isValidPasswordValues(currentPassword).reason);
-                }
-                let currentPasswordCharIndex = currentPassword.length - 1;
-                let previousIndex = Math.floor(((currentPasswordCharIndex - 1) * 6) / 8);
-                let currentIndex = Math.floor((currentPasswordCharIndex * 6) / 8);
-                let nextIndex = Math.floor(((currentPasswordCharIndex + 1) * 6) / 8);
-
-                if (currentDecodedPasswordFromGuessedPassword[currentIndex] === decodedPassword[currentIndex]) {
-                    if (!notEquals(currentDecodedPasswordFromGuessedPassword, decodedPassword) && isValidPasswordValues(currentPassword).valid) {
-                        break;
-                    }
-                    currentPassword = currentPassword.concat(0);
-                } else {
-                    let lastChar = currentPassword.pop();
-                    let nextChar = lastChar + 1;
-                    if (nextChar > biggestPossibleChar) {
-                        // We need to know if next number may be able to fix value
-                        // If yes, we go back to zero and continue
-                        if (currentIndex === nextIndex) {
-                            currentPassword = currentPassword.concat(0);
-                            currentPassword = currentPassword.concat(0);
-                        } else {
-                            if (previousIndex === currentIndex) {
-                                currentPassword[currentPassword.length - 1] = currentPassword[currentPassword.length - 1] + 1;
-                                currentPassword = currentPassword.concat(0);
-                            } else {
-                                // lets hope the previous one will fix it
-                                currentPassword[currentPassword.length - 1] = currentPassword[currentPassword.length - 1] + 1;
-                            }
-                        }
-                    } else {
-                        currentPassword = currentPassword.concat(nextChar);
-                    }
-                }
-
-                currentDecodedPasswordFromGuessedPassword = getDecodedPasswordForPasswordValuesArray(currentPassword.concat(0xff));
-            }
-            return currentPassword;
-        }
-
         function fixIssDeluxePasswordSimple(arr) {
             return fixChecksum(arr);
         }
@@ -826,7 +762,12 @@
                 return [entry.bits, value];
             });
 
-            const passwordString = encodedValuesToPasswordString(genPassForDecodedPassword(bitPackValues(passwordArray)));
+            const bitPackedParams = packBits(passwordArray);
+            const checksum = calculateChecksum(bitPackedParams);
+            const fullValues = addMaskAndChecksum(bitPackedParams); 
+            const passwordEncodedValues = encodeValues(fullValues);
+            const passwordString = encodedValuesToPasswordString(passwordEncodedValues);
+
             updateGeneratedPassword(passwordString);
         }
 
