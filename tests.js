@@ -40,6 +40,7 @@ function runTests() {
         testFullPasswordDecoding();
         testFullPasswordGenerationFromParametersElim2();
         testFullPasswordGenerationFromParametersElim3();
+        testFullPasswordGenerationFromParametersWorldSeries();
 
         testPackBits();
         testChecksum();
@@ -194,9 +195,6 @@ function testFullPasswordGenerationFromParametersElim3() {
     ];
 
     const encoded = passwordStringTo8bitArray("B~jCB LBG♦j =DLBB");
-    console.log(toBinaryArray8b(encoded));
-    console.log(toBinaryArray8b(decodeValues(encoded)));
-    
 
     const bitPackedParams = packBits(parameters);
     const checksum = calculateChecksum(bitPackedParams);
@@ -209,4 +207,71 @@ function testFullPasswordGenerationFromParametersElim3() {
     assertEquals(finalPassword, "B~jCB LBG♦j =DLBB ", "Password generation from parameters failed, outputed " + finalPassword);
 
     console.log("testFullPasswordGenerationFromParametersElim3 finished.");
+}
+
+function testFullPasswordGenerationFromParametersWorldSeries() {
+    console.log("Running testFullPasswordGenerationFromParametersWorldSeries...");
+    // Will use "International World Series game"
+
+    // parameter tuples [bit count, value]
+    const parameters = [
+        [8, 0x20],
+        [8, 0x00],
+        [4, 0x01],
+        [4, 0x00],
+        [4, 0x04],
+        [7, 0x3c],
+        [6, 0x05],
+        [3, 0x02],
+        [3, 0x03],
+        [7, 0x00],
+        [7, 0x00],
+        [3, 0x03],
+        [6, 0x02],
+        [6, 0x02],
+        [6, 0x00],
+        [6, 0x03],
+        [6, 0x04],
+        [6, 0x05],
+        [6, 0x04],
+        [6, 0x04],
+        [6, 0x01],
+        [6, 0x00],
+        [6, 0x02],
+        [6, 0x01],
+        [6, 0x04],
+        [6, 0x02],
+        [6, 0x02],
+        [6, 0x01],
+        [6, 0x05],
+        [6, 0x05],
+        [6, 0x01],
+        [6, 0x03],
+        [6, 0x02],
+        [6, 0x02],
+        [6, 0x02],
+        [6, 0x03],
+        [6, 0x04],
+        [6, 0x02],
+        [6, 0x01],
+        [6, 0x03],
+        [6, 0x05],
+        [6, 0x03],
+        [6, 0x00],
+        [6, 0x03],
+        [6, 0x05],
+        [6, 0x01],
+        [6, 0x03],
+        [6, 0x00],
+    ];
+
+    const encoded = passwordStringTo8bitArray("B-LLB GB$πV FB1ML BQVZV VGBLG VLLGZ ZGQLL LQVLG QZQBQ ZGQBB");
+
+    const bitPackedParams = packBits(parameters);
+    const fullValues = addMaskAndChecksum(bitPackedParams); 
+    const passwordEncodedValues = encodeValues(fullValues);
+    const finalPassword = encodedValuesToPasswordString(passwordEncodedValues);
+    assertEquals(finalPassword, 'B-LLB GB$πV FB1ML BQVZV \nVGBLG VLLGZ ZGQLL LQVLG \nQZQBQ ZGQBB ', "Password generation from parameters failed, outputed " + finalPassword);
+
+    console.log("testFullPasswordGenerationFromParametersWorldSeries finished.");
 }
