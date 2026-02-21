@@ -37,6 +37,7 @@ const toHexArray = (arr) => arr.map(x => '0x' + x.toString(16).padStart(2, '0'))
 
 function runTests() {
     try {
+        testEncodeSequentialSixBitArray()
         testFullPasswordDecoding();
         testFullPasswordGenerationFromParametersElim2();
         testFullPasswordGenerationFromParametersElim3();
@@ -274,4 +275,48 @@ function testFullPasswordGenerationFromParametersWorldSeries() {
     assertEquals(finalPassword, 'B-LLB GB$πV FB1ML BQVZV \nVGBLG VLLGZ ZGQLL LQVLG \nQZQBQ ZGQBB ', "Password generation from parameters failed, outputed " + finalPassword);
 
     console.log("testFullPasswordGenerationFromParametersWorldSeries finished.");
+}
+
+function testEncodeSequentialSixBitArray() {
+    // An array of bytes, but actually it will be split in 6 bits values.
+    // the values will be all 110001 (so it is easy to se beginning and ending)
+    // See that treating all as 16 bit little endian is essential to understand what is happening
+    // where first byte is a, second is b ans so on:
+    // bb_aaaaaa cccc_bbbb dddddd_cc 
+    // ff_eeeeee gggg_ffff hhhhhh_gg 
+    // jj_iiiiii kkkk_jjjj llllll_kk
+    // or 16 bits per line:
+    // cccc_bbbb bb_aaaaaa - index 0 bitshift >> 0 a, index 0 bitshift >> 6 b
+    // dddddd_cc cccc_bbbb - index 1 bitshift >> 4 c
+    // ff_eeeeee dddddd_cc - index 2 bitshift >> 2 d
+    // gggg_ffff ff_eeeeee - index 3 bitshift >> 0 e, index 3 bitshift >> 6 f
+    // hhhhhh_gg gggg_ffff - index 4 bitshift >> 4  g
+    // jj_iiiiii hhhhhh_gg - index 5 bitshift >> 2  h
+    // kkkk_jjjj jj_iiiiii - index 6 bitshift >> 0  i, index 6 bitshift >> 6 j
+    const eightBitArrayWithSequentialSixBitStream = [
+    //    bb_aaaaaa    cccc_bbbb    dddddd_cc 
+        0b01_110001, 0b0001_1100, 0b110001_11,
+    //    ff_eeeeee    gggg_ffff    hhhhhh_gg 
+        0b01_110001, 0b0001_1100, 0b110001_11,
+    //    jj_iiiiii    kkkk_jjjj    llllll_kk 
+        0b01_110001, 0b0001_1100, 0b110001_11, 
+        0x00
+    ];
+    const passwordEncodedValues = encodeValues(eightBitArrayWithSequentialSixBitStream);
+    assertArrayEquals(passwordEncodedValues, [
+        0b110001, //a
+        0b110001, //b
+        0b110001, //c
+        0b110001, //d
+        0b110001, //e
+        0b110001, //f
+        0b110001, //g
+        0b110001, //h
+        0b110001, //i
+        0b110001, //j
+        0b110001, //k
+        0b110001, //l
+        0xff // terminator
+    ], "Encoding sequential six bit array failed");
+
 }

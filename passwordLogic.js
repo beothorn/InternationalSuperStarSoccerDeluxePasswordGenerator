@@ -337,7 +337,7 @@ function encodeValues(values) {
         if (shift > 2) {
             sym |= (b1 << (8 - shift));
         }
-        sym &= 0x3f;
+        sym &= 0b111111; // 6 bit mask (char size)
 
         if (sym > biggestPossibleChar) {
             throw new Error(`Symbol out of range at ${charCursor}: ${sym}`);
