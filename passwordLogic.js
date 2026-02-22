@@ -237,72 +237,9 @@ function bitShiftRightEightBitsWithCarry(value, bitShift) {
 }
 
 /**
- * Given a set of values, encode them according to the algorithm used by ISSD.
- * We can think encoding as spreading the bits of a single value.  
- * Decoding uses a sixCounter, dividing it by eigth and using the division result as the index to write and the remainder as the bitshift.
- * So, the division goes like: 0, 0, 1, 2, 3, 3
- * And the remainder: 0, 6, 4, 2, 0, 6
- * 
- * Will use "International Elimination Phase game 2" password, which is "B$NCD GC5K# K1" as example
- * encoded
- * [0x00, 0x30, 0x0a, 0x01, 0x02, 0x04, 0x01, 0x24, 0x07, 0x38, 0x07, 0x20, 0xff]
- * decoded
- * [0x00, 0xac, 0x04, 0x02, 0x11, 0x90, 0x07, 0x7e, 0x80, 0x00]
- * how does 0xac becomes 0x0a?
- * Lets look at the binaries
- * index  0         0         1         2         3         3         4         5         6         6         7         8
- * shift  0         6         4         2         0         6         4         2         0         6         4         2
- * enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
- * dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
- *        0         1         2         3         4         5         6         7         8         9         10        11
- * 0011_0000 shifted 6 times is 0000_1100
- * so why the first decoded is not 0000_1100?
- * 0000_1010 shifted 4 times is 1010_0000 
- * 0000_1100 and 1010_0000 is 1010_1100 which matches 1
- * 0000_0001 shifted 2 times is 0000_0100 
- * which matches 0000_0100
- * so it is a relation of 1 decoded to one or two encodeds (there seems to be an offset)
- * 0 - [0]     [0000_0000] to [0000_0000]             shift [0]     special?
- * 1 - [1, 2]  [1010_1100] to [0011_0000, 0000_1010]  shift [6, 4]  index+1 [1,1] (0,0)
- * 2 - [3]     [0000_0100] to [0000_0001]             shift [2]     index+1 [2]   (1)
- * 3 - [4]     [0000_0010] to [0000_0010]             shift [0]     index+1 [3]   (2)
- * 4 - [5,6]   [0001_0001] to [0000_0100, 0000_0001]  shift [6, 4]  index+1 [4,4] (3,3)
- * 5 - [7]     [1001_0000] to [0010_0100]             shift [2]     index+1 [5]   (4)
- * 6 - [8]     [0000_0111] to [0000_0111]             shift [0]     index+1 [6]   (5)
- * 7 - [9,10]  [0111_1110] to [0011_1000, 0000_0111]  shift [6,4]   index+1 [7,7] (6,6)
- * 8 - [11]    [1000_0000] to [0010_0000]             shift [2]     index+1 [8]   (7)
- * From this, it seems like:
- * - There is an offset for the index
- * - The strategy when there are two slots is to break down the byte in 2 nibbles (4 bits) and add the shifted on each slot 
- * - The last nible gets shifted first, and the first 4 bits last
- * - Shifts rotates on 8 bits
- * 
- * Thinking 16 bits LE instead
- * index  0         0         1         2         3         3         4         5         6         6         7         8
- * shift  0         6         4         2         0         6         4         2         0         6         4         2
- * enc   '0000_0000 0011_0000 0000_1010 0000_0001 0000_0010 0000_0100 0000_0001 0010_0100 0000_0111 0011_1000 0000_0111 0010_0000 11111111'
- * dec   '0000_0000 1010_1100 0000_0100 0000_0010 0001_0001 1001_0000 0000_0111 0111_1110 1000_0000 00000000'
- *        0         1         2         3         4         5         6         7         8         9         10        11
- * The decode code takes one index and write to (reads as 8 bits, writes as 16)
- * 
- * 0 - [0b0000_0000]  16bit 0b0000_0000_0000_0000 shift 0 -> 0b0000_0000_0000_0000
- * writes 0b0000_0000, 0b0000_0000
- * 0 - [1010_1100] 16bit 0b1010_1100_0000_0000 shift 6 -> 0b0000_0010_1011_0000
- * writes 0b0000_0000, 0b0000_0000
- * (0b0000_0000_0011_0000 >> 0) | (0b0011_0000_0000_1010 >> 6)
- *                  
- * 
- * 
- * After tryin it works for "B$NCD GC5K# K1" but fails for "B~jCB LBG♦j =DLBB"
- * 
- * index  0         0         1         2         3         3         4         5         6         6         7         8
- * shift  0         6         4         2         0         6         4         2         0         6         4         2
- * enc    0000_0000 0010_1111 0001_1010 0000_0001 0000_0000 0000_1000 0000_0000 0000_0100 0011_1100 0001_1010 0010_1011 0000_0010 0000_1000 0000_0000 0000_0000 11111111
- * dec    1100_0000 1010_1011 0000_0101 0000_0000 0000_0010 0001_0000 1011_1100 1011_0110 0000_1010 0000_1000 0000_0000 00000000
- *        0         1         2         3         4         5         6         7         8         9         10        11        12        13        14        15
- * 
- * 0 - ? 
- * 
+ * Values is supposed to be an array of bytes, representing 16 bits little endian.
+ * This will encode values in a six bit array.
+ * This array can then be converted to a password string using the chars mapping.
  * 
  * @param {*} values 
  * @returns 
@@ -318,7 +255,7 @@ function encodeValues(values) {
     // Data bytes that actually get encoded (exclude trailing 0x00 terminator)
     const data = values.slice(0, -1);
 
-    // data is an array of 8 bit values
+    // data is interpreted as an array 16 bits Little endian, with each array item having a byte
     const totalBits = data.length * 8;
     // We will break it down in 6 bit chars (our characters have 6 bits of information, since we have 64 chars)
     const passCharCount = totalBits / 6;
@@ -329,15 +266,22 @@ function encodeValues(values) {
         const byteIndex = bitPos >> 3;      // floor(bitPos / 8)
         const shift = bitPos & 7;           // bitPos % 8
 
+        // We read two values of 8 bits, this will be our 16 bit value, little endian, so the first byte is the low part and the second byte is the high part
         const b0 = data[byteIndex] ?? 0;
         const b1 = data[byteIndex + 1] ?? 0;
 
+        // Encoding falls mainly on three cases
+        // cccc_bbbb bb_aaaaaa - b0 >> 0 bb_aaaaaa
+        // cccc_bbbb bb_aaaaaa - b0 >> 6 0000bb | b1 << (8-6) cc_bbbb00 ORed is bbbbbb 
+        // dddddd_cc cccc_bbbb - b0 >> 4 0000_cccc | b1 << (8-4) dd_cc0000 ORed is cccccc
+        // ff_eeeeee dddddd_cc - b0 >> 2 00dddddd
+
         // Extract 6 bits starting at (byteIndex, shift), Least Significant Bit-first within bytes
         let sym = (b0 >> shift);
-        if (shift > 2) {
-            sym |= (b1 << (8 - shift));
+        if (shift > 2) { // We only need the high part when shift is greater than 2, otherwise the whole 6 bits are on the low part
+            sym |= (b1 << (8 - shift)); // We only need to shift the hight part right till it is on place. When we OR with the low part, we get the full 6 bits.
         }
-        sym &= 0b111111; // 6 bit mask (char size)
+        sym &= 0b111111; // 6 bit mask (char size), needed since the array is actually 8 bits
 
         if (sym > biggestPossibleChar) {
             throw new Error(`Symbol out of range at ${charCursor}: ${sym}`);
@@ -349,16 +293,12 @@ function encodeValues(values) {
     return out;
 }
 
-function generatePassword(checksum, mask, values) {
-    // Implementation goes here
-
-    // Steps
-    // pack values into bit-packed array
-    // add checksum to array with value 0
-    // calculate checksum and fix it on the array
-    // concatenate 0 as the terminator
-    // encode the array using the algorithm used by the game, which is the reverse of the decoding algorithm
-    // convert result to string
+function generatePasswordFromParameters(params) {
+    const bitPackedParams = packBits(params);
+    const fullValues = addMaskAndChecksum(bitPackedParams); 
+    const passwordEncodedValues = encodeValues(fullValues);
+    const passwordString = encodedValuesToPasswordString(passwordEncodedValues);
+    return passwordString;
 }
 
 

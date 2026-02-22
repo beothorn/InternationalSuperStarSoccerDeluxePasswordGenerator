@@ -152,7 +152,7 @@
 
     <select id="passwordTypeSelector"></select>
     <div id="passwordParametersForm"></div>
-    <button onclick="generateInternationalEliminationPhasePassword()">Generate Password</button>
+    <button onclick="generatePasswordFromInputValues()">Generate Password</button>
     <div id="generatedPasswordContainer">
         <p id="generatedPassword">••••• ••••• ••••• •••••
 ••••• ••••• ••••• •••••
@@ -177,7 +177,7 @@
                     <h2>Main flags (in order, if one matches no other does):</h2>
                     <label><input type="checkbox" checked id="bit5" onchange="toggleBit(0x20, this.checked)"> Set bit 5 (#$0020) (world series?)</label>
                     <label><input type="checkbox" id="bit3" onchange="toggleBit(0x04, this.checked)"> Set bit 3 (#$0004) (International?)</label>
-                    <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.c    hecked)"> Set bit 2 (#$0002) (Short league?)</label>
+                    <label><input type="checkbox" id="bit2" onchange="toggleBit(0x02, this.checked)"> Set bit 2 (#$0002) (Short league?)</label>
                     <label><input type="checkbox" id="bit11" onchange="toggleBit(0x0400, this.checked)"> Set bit 11 (#$0400) (Short tournament?)</label>
                     <label><input type="checkbox" id="bit13" onchange="toggleBit(0x1000, this.checked)"> Set bit 9 (#$1000)(Scenario?)</label>
                 </p>
@@ -749,7 +749,7 @@
             generatedPassword.textContent = formatPasswordForDisplay(passwordString);
         }
 
-        function generateInternationalEliminationPhasePassword() {
+        function generatePasswordFromInputValues() {
             const selected = getSelectedPasswordEntry();
             if (!selected) {
                 return;
@@ -762,11 +762,7 @@
                 return [entry.bits, value];
             });
 
-            const bitPackedParams = packBits(passwordArray);
-            const checksum = calculateChecksum(bitPackedParams);
-            const fullValues = addMaskAndChecksum(bitPackedParams); 
-            const passwordEncodedValues = encodeValues(fullValues);
-            const passwordString = encodedValuesToPasswordString(passwordEncodedValues);
+            const passwordString = generatePasswordFromParameters(passwordArray);
 
             updateGeneratedPassword(passwordString);
         }
@@ -781,12 +777,12 @@
 
             passwordTypeSelector.value = "0";
             buildPasswordForm(0);
-            generateInternationalEliminationPhasePassword();
+            generatePasswordFromInputValues();
         }
 
         passwordTypeSelector.addEventListener("change", () => {
             buildPasswordForm(Number(passwordTypeSelector.value));
-            generateInternationalEliminationPhasePassword();
+            generatePasswordFromInputValues();
         });
 
         advancedToggle.addEventListener("click", () => {

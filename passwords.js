@@ -1,4 +1,33 @@
 // Type is team, boolean or gameResult (0 = loss, 1 = draw, 2 = win)
+// There are some passwords missing:
+/**
+ Checklist
+
+  #$0004 and #$0200 - Size 12
+  International elimination phase - game 2
+
+  #$0004 - Size 15
+  International elimination phase - game 3
+
+  #$0004 and #$0008 - Size 39
+  International cup phase - game 1
+
+  #$1000 - Size 26
+  Scenarios
+
+  #$0020 - Size 50
+  World series
+
+  #$0020 and #$0080 - Size 11
+  #$0400 - Size 11
+  ????
+
+  #$0020 and #$0100 - Size 8
+  ????
+
+  #$0002 - Size 20
+  ????
+ */
 const passwordMap = [
     /**
     International Elimination Phase game 2
